@@ -1,11 +1,13 @@
 ﻿
 using System.Data.SqlClient;
+using System.Security.Policy;
 
 namespace OpticaSistema
 {
     public partial class Form1 : Form
     {
         private ConexionDB conexionBD;
+        string rutaProyecto = Directory.GetParent(Application.StartupPath).Parent.Parent.Parent.FullName;
         public Form1()
         {
             InitializeComponent();
@@ -79,7 +81,9 @@ namespace OpticaSistema
 
 
             //Imagen Inicio Sección
-            string rutaImagen = @"F:\Proyecto\OpticaSistema\OpticaSistema\Imagenes\log.png";
+            //string rutaImagen = @"F:\Proyecto\OpticaSistema\OpticaSistema\Imagenes\log.png";
+
+            string rutaImagen = Path.Combine(rutaProyecto, "Imagenes", "log.png");
 
             if (File.Exists(rutaImagen))
             {
@@ -101,8 +105,9 @@ namespace OpticaSistema
         private void Form1_Load(object sender, EventArgs e)
         {
             this.Text = "OpticaSistema - Inicio de sesión";
-            this.Icon = new Icon(@"F:\Proyecto\OpticaSistema\OpticaSistema\Imagenes\log.ico");
-
+            //this.Icon = new Icon(@"F:\Proyecto\OpticaSistema\OpticaSistema\Imagenes\log.ico");
+            string rutaIcono = Path.Combine(rutaProyecto, "Imagenes", "log.ico");
+            this.Icon = new Icon(rutaIcono);
 
         }
 
