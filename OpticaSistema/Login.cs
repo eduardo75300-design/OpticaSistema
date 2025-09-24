@@ -11,6 +11,7 @@ namespace OpticaSistema
         {
             public static string Nombre { get; set; }
             public static string TipoUsuario { get; set; }
+
         }
         public Login()
         {

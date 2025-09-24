@@ -15,11 +15,12 @@ namespace OpticaSistema
 {
     public partial class Inicio : Form
     {
-              public Inicio()
+        public Inicio()
         {
             InitializeComponent();
             this.FormClosing += Inicio_FormClosing;
-            CrearMenuSuperiorAdaptable();
+            MenuSuperiorBuilder.CrearMenuSuperiorAdaptable(this);
+
             // Establece el formulario en pantalla completa
             this.WindowState = FormWindowState.Maximized;
             this.StartPosition = FormStartPosition.CenterScreen;
