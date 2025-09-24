@@ -1,16 +1,20 @@
 ﻿
 using System.Data.SqlClient;
+using System.Runtime.InteropServices;
 
 namespace OpticaSistema
 {
-    public partial class Form1 : Form
+    public partial class Login : Form
     {
         private ConexionDB conexionBD;
-        public Form1()
+        public static class SesionUsuario
+        {
+            public static string Nombre { get; set; }
+        }
+        public Login()
         {
             InitializeComponent();
             conexionBD = new ConexionDB();
-
             int anchoCampo = 300;
             int margenDerecho = 40;
             int posicionX = this.ClientSize.Width - anchoCampo - margenDerecho;
@@ -76,10 +80,11 @@ namespace OpticaSistema
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.Size= new Size(850,500);
 
 
             //Imagen Inicio Sección
-            string rutaImagen = @"F:\Proyecto\OpticaSistema\OpticaSistema\Imagenes\log.png";
+            string rutaImagen = "Imagenes/log.ico";
 
             if (File.Exists(rutaImagen))
             {
@@ -101,7 +106,7 @@ namespace OpticaSistema
         private void Form1_Load(object sender, EventArgs e)
         {
             this.Text = "OpticaSistema - Inicio de sesión";
-            this.Icon = new Icon(@"F:\Proyecto\OpticaSistema\OpticaSistema\Imagenes\log.ico");
+            this.Icon = new Icon("Imagenes/log.ico");
 
 
         }
@@ -123,18 +128,26 @@ namespace OpticaSistema
 
         private async void btnIngresar_Click(object sender, EventArgs e)
         {
-            string usuario = txtUsuario.Text.Trim();
+            string usuario = txtUsuario.Text.Trim(); // DNI
             string contrasena = txtContrasena.Text.Trim();
+
             if (ValidarUsuario(usuario, contrasena))
             {
-                MessageBox.Show("Bienvenido Usuario", "SISTEMA", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                await Task.Delay(2000);
+                // Obtener y guardar el nombre del usuario
+                SesionUsuario.Nombre = ObtenerNombreDesdeBD(usuario);
 
+                Bienvenido bienvenida = new Bienvenido();
+                bienvenida.ShowDialog(); // Bloquea hasta que se cierre
+
+                Inicio inicioForm = new Inicio();
+                inicioForm.Show();
+                this.Hide(); // Oculta el login
             }
             else
             {
                 MessageBox.Show("Usuario o Contraseña incorrecto", "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
         }
 
         private bool ValidarUsuario(string usuario, string contrasena)
@@ -174,5 +187,35 @@ namespace OpticaSistema
         {
 
         }
+
+        private string ObtenerNombreDesdeBD(string dni)
+        {
+            string nombre = "";
+
+            using (SqlConnection con = conexionBD.Conectar())
+            {
+                try
+                {
+                    con.Open();
+                    string query = "SELECT Nombres FROM UsuarioBD WHERE Dni = @Dni";
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@Dni", dni);
+                        SqlDataReader reader = cmd.ExecuteReader();
+                        if (reader.Read())
+                        {
+                            nombre = reader["Nombres"].ToString();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al obtener nombre: " + ex.Message);
+                }
+            }
+
+            return nombre;
+        }
+
     }
 }

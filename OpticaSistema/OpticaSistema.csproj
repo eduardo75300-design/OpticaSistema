@@ -6,6 +6,18 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
+	<ItemGroup>
+	  <None Remove="Imagenes\log.ico" />
+	  <None Remove="Imagenes\log.png" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Content Include="Imagenes\log.ico">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Imagenes\log.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
