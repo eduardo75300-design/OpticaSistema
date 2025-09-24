@@ -17,15 +17,38 @@ namespace OpticaSistema
         {
             InitializeComponent();
             conexionBD = new ConexionDB();
+
+            // Estilo del formulario fijo
+            this.Size = new Size(850, 500);
+            this.MinimumSize = new Size(850, 500);
+            this.MaximumSize = new Size(850, 500);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.BackColor = Color.White;
+
+            // Imagen lateral
+            string rutaImagen = "Imagenes/log.ico";
+            if (File.Exists(rutaImagen))
+            {
+                PictureBox imagen = new PictureBox();
+                imagen.Image = Image.FromFile(rutaImagen);
+                imagen.SizeMode = PictureBoxSizeMode.StretchImage;
+                imagen.Size = new Size(300, 300);
+                imagen.Location = new Point(60, 100); // posición fija dentro del formulario
+                this.Controls.Add(imagen);
+            }
+            else
+            {
+                MessageBox.Show("No se encontró la imagen en:\n" + rutaImagen, "Error de carga", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            // Posicionamiento fijo dentro del formulario de 850x500
             int anchoCampo = 300;
-            int margenDerecho = 40;
-            int posicionX = this.ClientSize.Width - anchoCampo - margenDerecho;
+            int posicionX = 470; // parte derecha del formulario
+            int posicionY = 100;
 
-            // Altura total del bloque de login
-            int alturaBloque = 35 + 20 + 35 + 20 + 40; // txtUsuario + espacio + txtContrasena + espacio + botón
-            int posicionY = (this.ClientSize.Height - alturaBloque) / 2;
-
-            // Título LOGIN centrado sobre el bloque
+            // Título LOGIN
             lblLogin.Text = "LOGIN";
             lblLogin.Font = new Font("Segoe UI", 28, FontStyle.Bold);
             lblLogin.ForeColor = Color.DarkRed;
@@ -64,7 +87,7 @@ namespace OpticaSistema
             txtContrasena.Size = new Size(anchoCampo, 35);
             txtContrasena.Location = new Point(posicionX, posicionY + 105);
 
-            // Botón 
+            // Botón Ingresar
             btnIngresar.Text = "INGRESAR";
             btnIngresar.Font = new Font("Segoe UI", 12, FontStyle.Bold);
             btnIngresar.BackColor = Color.DarkRed;
@@ -77,32 +100,7 @@ namespace OpticaSistema
             btnIngresar.MouseEnter += (s, e) => btnIngresar.BackColor = Color.Firebrick;
             btnIngresar.MouseLeave += (s, e) => btnIngresar.BackColor = Color.DarkRed;
 
-            // Estilo del formulario
-            this.BackColor = Color.White;
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.Size= new Size(850,500);
-
-
-            //Imagen Inicio Sección
-            string rutaImagen = "Imagenes/log.ico";
-
-            if (File.Exists(rutaImagen))
-            {
-                PictureBox imagen = new PictureBox();
-                imagen.Image = Image.FromFile(rutaImagen);
-                imagen.SizeMode = PictureBoxSizeMode.StretchImage;
-                imagen.Location = new Point(60,70);
-                imagen.Size = new Size(300, 300);
-                this.Controls.Add(imagen);
-            }
-            else
-            {
-                MessageBox.Show("No se encontró la imagen en:\n" + rutaImagen, "Error de carga", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-
+            
         }
 
         private void Form1_Load(object sender, EventArgs e)
