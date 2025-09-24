@@ -19,9 +19,9 @@ namespace OpticaSistema
             conexionBD = new ConexionDB();
 
             // Estilo del formulario fijo
-            this.Size = new Size(850, 500);
-            this.MinimumSize = new Size(850, 500);
-            this.MaximumSize = new Size(850, 500);
+            this.Size = new Size(850, 450);
+            this.MinimumSize = new Size(850, 450);
+            this.MaximumSize = new Size(850, 450);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -35,7 +35,7 @@ namespace OpticaSistema
                 imagen.Image = Image.FromFile(rutaImagen);
                 imagen.SizeMode = PictureBoxSizeMode.StretchImage;
                 imagen.Size = new Size(300, 300);
-                imagen.Location = new Point(60, 100); // posición fija dentro del formulario
+                imagen.Location = new Point(60, 40); // posición fija dentro del formulario
                 this.Controls.Add(imagen);
             }
             else
