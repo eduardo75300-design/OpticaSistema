@@ -65,16 +65,23 @@ namespace OpticaSistema
             lblNombre.AutoSize = false;
             menuLayout.Controls.Add(lblNombre, 0, 0);
 
-            // Opciones del menú
-            string[] secciones = {
-        "INICIO",
-        "HISTORIAL CLÍNICO",
-        "REGISTRO DE PACIENTE",
-        "ADMINISTRACIÓN USUARIO",
-        "CERRAR SECCIÓN"
-    };
+            List<string> secciones = new List<string>
+            {
+                "INICIO",
+                "HISTORIAL CLÍNICO",
+                "REGISTRO DE PACIENTE"
+            };
 
-            for (int i = 0; i < secciones.Length; i++)
+            // Solo agregar si es administrador
+            if (SesionUsuario.TipoUsuario == "A")
+            {
+                secciones.Add("ADMINISTRACIÓN USUARIO");
+            }
+
+            secciones.Add("CERRAR SESIÓN");
+
+
+            for (int i = 0; i < secciones.Count; i++)
             {
                 Label lbl = new Label();
                 lbl.Text = secciones[i];
@@ -112,7 +119,7 @@ namespace OpticaSistema
                             destino = new FormAdministracionUsuario();
                             break;
 
-                        case "CERRAR SECCIÓN":
+                        case "CERRAR SESIÓN":
                             Application.Exit();
                             return;
                     }

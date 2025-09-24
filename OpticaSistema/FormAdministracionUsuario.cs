@@ -71,12 +71,12 @@ namespace OpticaSistema
 
             // Opciones del menú
             string[] secciones = {
-        "INICIO",
-        "HISTORIAL CLÍNICO",
-        "REGISTRO DE PACIENTE",
-        "ADMINISTRACIÓN USUARIO",
-        "CERRAR SECCIÓN"
-    };
+            "INICIO",
+            "HISTORIAL CLÍNICO",
+            "REGISTRO DE PACIENTE",
+            "ADMINISTRACIÓN USUARIO",
+            "CERRAR SESIÓN"
+            };
 
             for (int i = 0; i < secciones.Length; i++)
             {
@@ -116,7 +116,7 @@ namespace OpticaSistema
                             destino = new FormAdministracionUsuario();
                             break;
 
-                        case "CERRAR SECCIÓN":
+                        case "CERRAR SESIÓN":
                             Application.Exit();
                             return;
                     }

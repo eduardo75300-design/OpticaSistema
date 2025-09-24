@@ -10,6 +10,7 @@ namespace OpticaSistema
         public static class SesionUsuario
         {
             public static string Nombre { get; set; }
+            public static string TipoUsuario { get; set; }
         }
         public Login()
         {
@@ -134,14 +135,14 @@ namespace OpticaSistema
             if (ValidarUsuario(usuario, contrasena))
             {
                 // Obtener y guardar el nombre del usuario
-                SesionUsuario.Nombre = ObtenerNombreDesdeBD(usuario);
-
+                CargarDatosUsuario(usuario); // guarda nombre y tipo
                 Bienvenido bienvenida = new Bienvenido();
-                bienvenida.ShowDialog(); // Bloquea hasta que se cierre
+                bienvenida.ShowDialog();
 
                 Inicio inicioForm = new Inicio();
                 inicioForm.Show();
-                this.Hide(); // Oculta el login
+                this.Hide();
+
             }
             else
             {
@@ -188,34 +189,41 @@ namespace OpticaSistema
 
         }
 
-        private string ObtenerNombreDesdeBD(string dni)
+        private void CargarDatosUsuario(string dni)
         {
             string nombre = "";
+            string tipoUsuario = "";
 
             using (SqlConnection con = conexionBD.Conectar())
             {
                 try
                 {
                     con.Open();
-                    string query = "SELECT Nombres FROM UsuarioBD WHERE Dni = @Dni";
+                    string query = "SELECT Nombres, TipoUsuario FROM UsuarioBD WHERE Dni = @Dni";
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
                         cmd.Parameters.AddWithValue("@Dni", dni);
                         SqlDataReader reader = cmd.ExecuteReader();
                         if (reader.Read())
                         {
-                            nombre = reader["Nombres"].ToString();
+                            SesionUsuario.Nombre = reader["Nombres"].ToString();
+                            SesionUsuario.TipoUsuario = reader["TipoUsuario"].ToString();
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error al obtener nombre: " + ex.Message);
+                    MessageBox.Show("Error al obtener datos del usuario: " + ex.Message);
                 }
+
             }
 
-            return nombre;
         }
+
+
+
+
+
 
     }
 }
