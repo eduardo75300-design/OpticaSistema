@@ -7,10 +7,18 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 	<ItemGroup>
+	  <None Remove="Imagenes\borrar.png" />
+	  <None Remove="Imagenes\boton-editar.png" />
 	  <None Remove="Imagenes\log.ico" />
 	  <None Remove="Imagenes\log.png" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Content Include="Imagenes\borrar.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Imagenes\boton-editar.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Imagenes\log.ico">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
