@@ -26,11 +26,11 @@ namespace OpticaSistema
             menuLayout.BackColor = Color.Transparent;
             menuLayout.ColumnStyles.Clear();
 
-            // Distribución proporcional: 20% para nombre, 16% para cada opción
-            menuLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F)); // Nombre del usuario
+            // Distribución proporcional
+            menuLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F)); // Nombre
             for (int i = 1; i < 6; i++)
             {
-                menuLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16F)); // Opciones del menú
+                menuLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16F)); // Opciones
             }
 
             barraNav.Controls.Add(menuLayout);
@@ -46,14 +46,66 @@ namespace OpticaSistema
             lblNombre.AutoSize = false;
             menuLayout.Controls.Add(lblNombre, 0, 0);
 
-            List<string> secciones = new List<string>
-            {
-                "INICIO",
-                "HISTORIAL CLÍNICO",
-                "REGISTRO DE PACIENTE"
-            };
+            // Submenú para HISTORIAL CLÍNICO
+            Panel subMenuHistorial = new Panel();
+            subMenuHistorial.Size = new Size(160, 80);
+            subMenuHistorial.BackColor = Color.SteelBlue;
+            subMenuHistorial.Visible = false;
+            subMenuHistorial.BorderStyle = BorderStyle.None;
+            formulario.Controls.Add(subMenuHistorial);
 
-            // Solo agregar si es administrador
+            // Subopción: Registrar Historial
+            Label lblRegistrar = new Label();
+            lblRegistrar.Text = "REGISTRAR";
+            lblRegistrar.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            lblRegistrar.ForeColor = Color.White;
+            lblRegistrar.BackColor = Color.SteelBlue;
+            lblRegistrar.Dock = DockStyle.Top;
+            lblRegistrar.Height = 40;
+            lblRegistrar.TextAlign = ContentAlignment.MiddleCenter;
+            lblRegistrar.Cursor = Cursors.Hand;
+            lblRegistrar.MouseEnter += (s, e) => lblRegistrar.BackColor = Color.LightSteelBlue;
+            lblRegistrar.MouseLeave += (s, e) => lblRegistrar.BackColor = Color.SteelBlue;
+            lblRegistrar.Click += (s, e) =>
+            {
+                if (formulario is FormRegistrarHistorial) return;
+                FormRegistrarHistorial registrar = new FormRegistrarHistorial();
+                registrar.WindowState = FormWindowState.Maximized;
+                registrar.Show();
+                formulario.Hide();
+            };
+            subMenuHistorial.Controls.Add(lblRegistrar);
+
+            // Subopción: Buscar Historial
+            Label lblBuscar = new Label();
+            lblBuscar.Text = "BUSCAR";
+            lblBuscar.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            lblBuscar.ForeColor = Color.White;
+            lblBuscar.BackColor = Color.SteelBlue;
+            lblBuscar.Dock = DockStyle.Top;
+            lblBuscar.Height = 40;
+            lblBuscar.TextAlign = ContentAlignment.MiddleCenter;
+            lblBuscar.Cursor = Cursors.Hand;
+            lblBuscar.MouseEnter += (s, e) => lblBuscar.BackColor = Color.LightSteelBlue;
+            lblBuscar.MouseLeave += (s, e) => lblBuscar.BackColor = Color.SteelBlue;
+            lblBuscar.Click += (s, e) =>
+            {
+                if (formulario is FormBuscarHistorial) return;
+                FormBuscarHistorial buscar = new FormBuscarHistorial();
+                buscar.WindowState = FormWindowState.Maximized;
+                buscar.Show();
+                formulario.Hide();
+            };
+            subMenuHistorial.Controls.Add(lblBuscar);
+
+            // Opciones del menú principal
+            List<string> secciones = new List<string>
+{
+    "INICIO",
+    "HISTORIAL CLÍNICO",
+    "REGISTRO DE PACIENTE"
+};
+
             if (SesionUsuario.TipoUsuario == "A")
             {
                 secciones.Add("ADMINISTRACIÓN USUARIO");
@@ -61,59 +113,76 @@ namespace OpticaSistema
 
             secciones.Add("CERRAR SESIÓN");
 
-
             for (int i = 0; i < secciones.Count; i++)
             {
                 Label lbl = new Label();
                 lbl.Text = secciones[i];
                 lbl.Font = new Font("Segoe UI", 10, FontStyle.Bold);
                 lbl.ForeColor = Color.White;
+                lbl.BackColor = Color.SteelBlue;
                 lbl.Dock = DockStyle.Fill;
                 lbl.TextAlign = ContentAlignment.MiddleCenter;
                 lbl.Cursor = Cursors.Hand;
                 lbl.Margin = new Padding(0);
                 lbl.AutoSize = false;
 
-                lbl.Click += (s, e) =>
+                // Hover visual
+                lbl.MouseEnter += (s, e) => lbl.BackColor = Color.LightSteelBlue;
+                lbl.MouseLeave += (s, e) => lbl.BackColor = Color.SteelBlue;
+
+                // Submenú por clic
+                if (secciones[i] == "HISTORIAL CLÍNICO")
                 {
-                    Form destino = null;
-
-                    switch (lbl.Text)
+                    lbl.Click += (s, e) =>
                     {
-                        case "INICIO":
-                            if (formulario is Inicio) return;
-                            destino = new Inicio();
-                            break;
+                        Point posicionGlobal = lbl.PointToScreen(Point.Empty);
+                        Point posicionLocal = formulario.PointToClient(new Point(
+                            posicionGlobal.X + lbl.Width / 2 - subMenuHistorial.Width / 2,
+                            posicionGlobal.Y + lbl.Height
+                        ));
 
-                        /*case "HISTORIAL CLÍNICO":
-                            if (formulario  is FormHistorialClinico) return;
-                            destino = new FormHistorialClinico();
-                            break;
-
-                        case "REGISTRO DE PACIENTE":
-                            if (formulario  is FormRegistroPaciente) return;
-                            destino = new FormRegistroPaciente();
-                            break;*/
-
-                        case "ADMINISTRACIÓN USUARIO":
-                            if (formulario is FormAdministracionUsuario) return;
-                            destino = new FormAdministracionUsuario();
-                            break;
-
-                        case "CERRAR SESIÓN":
-                            Application.Exit();
-                            return;
-                    }
-
-                    if (destino != null)
+                        subMenuHistorial.Location = posicionLocal;
+                        subMenuHistorial.Visible = !subMenuHistorial.Visible;
+                    };
+                }
+                else
+                {
+                    lbl.Click += (s, e) =>
                     {
-                        destino.WindowState = FormWindowState.Maximized;
-                        destino.Show();
-                        formulario.Hide();
-                    }
-                };
+                        Form destino = null;
 
-                menuLayout.Controls.Add(lbl, i + 1, 0); // +1 porque la columna 0 es para el nombre
+                        switch (lbl.Text)
+                        {
+                            case "INICIO":
+                                if (formulario is Inicio) return;
+                                destino = new Inicio();
+                                break;
+
+                            case "REGISTRO DE PACIENTE":
+                                if (formulario is FormRegistroPaciente) return;
+                                destino = new FormRegistroPaciente();
+                                break;
+
+                            case "ADMINISTRACIÓN USUARIO":
+                                if (formulario is FormAdministracionUsuario) return;
+                                destino = new FormAdministracionUsuario();
+                                break;
+
+                            case "CERRAR SESIÓN":
+                                System.Windows.Forms.Application.Exit();
+                                return;
+                        }
+
+                        if (destino != null)
+                        {
+                            destino.WindowState = FormWindowState.Maximized;
+                            destino.Show();
+                            formulario.Hide();
+                        }
+                    };
+                }
+
+                menuLayout.Controls.Add(lbl, i + 1, 0);
             }
         }
     }
