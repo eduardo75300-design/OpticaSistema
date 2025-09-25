@@ -48,7 +48,7 @@ namespace OpticaSistema
 
             // Submenú para HISTORIAL CLÍNICO
             Panel subMenuHistorial = new Panel();
-            subMenuHistorial.Size = new Size(160, 80);
+            subMenuHistorial.Height = 80; // altura fija
             subMenuHistorial.BackColor = Color.SteelBlue;
             subMenuHistorial.Visible = false;
             subMenuHistorial.BorderStyle = BorderStyle.None;
@@ -137,10 +137,11 @@ namespace OpticaSistema
                     {
                         Point posicionGlobal = lbl.PointToScreen(Point.Empty);
                         Point posicionLocal = formulario.PointToClient(new Point(
-                            posicionGlobal.X + lbl.Width / 2 - subMenuHistorial.Width / 2,
+                            posicionGlobal.X,
                             posicionGlobal.Y + lbl.Height
                         ));
 
+                        subMenuHistorial.Width = lbl.Width; // adaptar al ancho del botón
                         subMenuHistorial.Location = posicionLocal;
                         subMenuHistorial.Visible = !subMenuHistorial.Visible;
                     };
