@@ -83,14 +83,16 @@ namespace OpticaSistema
             // Panel superior: búsqueda + botones
             TableLayoutPanel panelSuperior = new TableLayoutPanel();
             panelSuperior.Dock = DockStyle.Fill;
-            panelSuperior.ColumnCount = 4;
+            panelSuperior.ColumnCount = 5;
             panelSuperior.RowCount = 1;
             panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80));   // Label DNI
             panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));  // TextBox
-            panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));  // Buscar
+            panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));  // Buscar
             panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));  // Registrar
+            panelSuperior.ColumnStyles[3] = new ColumnStyle(SizeType.Absolute, 120);
             layout.Controls.Add(panelSuperior, 0, 1);
 
+            // Label DNI
             Label lblDni = new Label();
             lblDni.Text = "DNI:";
             lblDni.Font = new Font("Segoe UI", 12, FontStyle.Bold);
@@ -99,6 +101,7 @@ namespace OpticaSistema
             lblDni.Margin = new Padding(5, 10, 0, 0);
             panelSuperior.Controls.Add(lblDni, 0, 0);
 
+            // TextBox
             TextBox txtBuscarDni = new TextBox();
             txtBuscarDni.Font = new Font("Segoe UI", 11);
             txtBuscarDni.Width = 120;
@@ -106,6 +109,7 @@ namespace OpticaSistema
             txtBuscarDni.Margin = new Padding(0, 10, 0, 0);
             panelSuperior.Controls.Add(txtBuscarDni, 1, 0);
 
+            // Botón BUSCAR
             Button btnBuscar = new Button();
             btnBuscar.Text = "BUSCAR";
             btnBuscar.Font = new Font("Segoe UI", 11, FontStyle.Bold);
@@ -114,8 +118,22 @@ namespace OpticaSistema
             btnBuscar.FlatStyle = FlatStyle.Flat;
             btnBuscar.Dock = DockStyle.Fill;
             btnBuscar.Margin = new Padding(5, 10, 5, 10);
+            btnBuscar.MinimumSize = new Size(130, 45);
             panelSuperior.Controls.Add(btnBuscar, 2, 0);
 
+            // Botón LIMPIAR
+            Button btnLimpiar = new Button();
+            btnLimpiar.Text = "ACTUALIZAR";
+            btnLimpiar.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnLimpiar.BackColor = Color.SteelBlue;
+            btnLimpiar.ForeColor = Color.White;
+            btnLimpiar.FlatStyle = FlatStyle.Flat;
+            btnLimpiar.Dock = DockStyle.Fill;
+            btnLimpiar.Margin = new Padding(5, 10, 5, 10);
+            btnLimpiar.MinimumSize = new Size(150, 45);
+            panelSuperior.Controls.Add(btnLimpiar, 3, 0);
+
+            // Botón REGISTRAR
             Button btnRegistrar = new Button();
             btnRegistrar.Text = "REGISTRAR";
             btnRegistrar.Font = new Font("Segoe UI", 11, FontStyle.Bold);
@@ -124,8 +142,9 @@ namespace OpticaSistema
             btnRegistrar.FlatStyle = FlatStyle.Flat;
             btnRegistrar.Anchor = AnchorStyles.Right;
             btnRegistrar.Margin = new Padding(5, 10, 5, 10);
-            panelSuperior.Controls.Add(btnRegistrar, 3, 0);
             btnRegistrar.MinimumSize = new Size(130, 45);
+            panelSuperior.Controls.Add(btnRegistrar, 4, 0);
+
 
             // Tabla de usuarios
             tablaUsuarios = new DataGridView();
@@ -194,7 +213,7 @@ namespace OpticaSistema
                     Color.LightGray, 2, ButtonBorderStyle.Solid);
             };
 
-            // Fuente y tamaño de campos
+             // Fuente y tamaño de campos
             Font campoFont = new Font("Segoe UI", 11);
             Size campoSize = new Size(400, 45);
 
@@ -235,7 +254,7 @@ namespace OpticaSistema
             cmbTipoUsuario.SelectedIndex = 0;
             pbFirma = new PictureBox
             {
-                Size = new Size(200, 100),
+                Size = new Size(250, 150),
                 BorderStyle = BorderStyle.FixedSingle,
                 SizeMode = PictureBoxSizeMode.StretchImage,
                 Margin = new Padding(0, 12, 0, 0)
@@ -266,7 +285,7 @@ namespace OpticaSistema
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = false,
-                Margin = new Padding(0, 8, 0, 0),
+                Margin = new Padding(0, 8, 0, 10),
                 Dock = DockStyle.None,
                 Padding = new Padding(0),
             };
@@ -287,7 +306,10 @@ namespace OpticaSistema
                     }
                 }
             };
-
+            btnLimpiar.Click += (s, e) =>
+            {
+                CargarUsuarios();
+            };
 
             // Botones
             btnGuardar = new Button
@@ -323,8 +345,22 @@ namespace OpticaSistema
                 TextAlign = ContentAlignment.MiddleCenter
             };
             panelRegistro.Controls.Add(lblTituloRegistro);
+            Control CrearTitulo(string titulo)
+            {
+                return new Label
+                {
+                    Text = titulo,
+                    Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                    AutoSize = true,
+                    Padding = new Padding(0, 10, 0, 0), // espacio abajo dentro del label
+                    TextAlign = ContentAlignment.BottomLeft // alinea el texto abajo
 
 
+
+                };
+
+
+            }
             // Contenedor de campos
             FlowLayoutPanel contenedor = new FlowLayoutPanel();
             contenedor.FlowDirection = FlowDirection.TopDown;
@@ -332,18 +368,27 @@ namespace OpticaSistema
             contenedor.Dock = DockStyle.Fill;
             contenedor.AutoScroll = true;
             contenedor.WrapContents = false;
-            contenedor.Padding = new Padding(50, 10, 0, 0);
+            contenedor.Padding = new Padding(50, 0, 0, 0);
+            contenedor.Controls.Add(CrearTitulo("Nombres"));
             contenedor.Controls.Add(txtNombre);
+            contenedor.Controls.Add(CrearTitulo("Apellidos"));
             contenedor.Controls.Add(txtApellido);
+            contenedor.Controls.Add(CrearTitulo("DNI"));
             contenedor.Controls.Add(txtDni);
+            contenedor.Controls.Add(CrearTitulo("Correo"));
             contenedor.Controls.Add(txtCorreo);
+            contenedor.Controls.Add(CrearTitulo("Contraseña"));
             contenedor.Controls.Add(txtClave);
+            contenedor.Controls.Add(CrearTitulo("Dirección"));
             contenedor.Controls.Add(txtDireccion);
+            contenedor.Controls.Add(CrearTitulo("Celular"));
             contenedor.Controls.Add(txtCelular);
+            contenedor.Controls.Add(CrearTitulo("Sexo"));
             contenedor.Controls.Add(cmbSexo);
-            contenedor.Controls.Add(cmbTipoUsuario);
+            contenedor.Controls.Add(CrearTitulo("Tipo de Usuario"));
             contenedor.Controls.Add(cmbTipoUsuario);
             contenedor.Controls.Add(chkEstado);
+            contenedor.Controls.Add(CrearTitulo("Firma"));
             contenedor.Controls.Add(pbFirma);
             contenedor.Controls.Add(panelBotonesFirma);
 
@@ -469,9 +514,10 @@ namespace OpticaSistema
                         string dniIngresado = txtDni.Text.Trim();
                         if (modoEdicion)
                         {
-                            string verificarQuery = "SELECT COUNT(*) FROM UsuarioBD WHERE Dni = @dni";
+                            string verificarQuery = "SELECT COUNT(*) FROM UsuarioBD WHERE Dni = @dni AND Dni <> @dniActual";
                             SqlCommand verificarCmd = new SqlCommand(verificarQuery, cn);
                             verificarCmd.Parameters.AddWithValue("@dni", dniIngresado);
+                            verificarCmd.Parameters.AddWithValue("@dniActual", dniEditando);
 
                             int existe = (int)verificarCmd.ExecuteScalar();
 
@@ -480,6 +526,7 @@ namespace OpticaSistema
                                 MessageBox.Show("Ya existe un usuario registrado con ese DNI.");
                                 return;
                             }
+
 
                             // Actualizar usuario existente
                             string query = @"UPDATE UsuarioBD SET Nombres = @nombres, Apellidos = @apellidos, Contraseña = @clave, Correo = @correo, Direccion = @direccion, Celular = @celular, Sexo = @sexo, TipoUsuario = @tipo, Estado = @estado, Firma = @firma, Dni = @dniNuevo WHERE Dni = @dni";
@@ -566,7 +613,6 @@ namespace OpticaSistema
                 if (dni.Length != 8)
                 {
                     MessageBox.Show("Ingrese un DNI válido de 8 dígitos.");
-                    CargarUsuarios();
                     return;
                 }
 
@@ -753,8 +799,9 @@ namespace OpticaSistema
 
                             cmbSexo.SelectedItem = cmbSexo.Items.Contains(sexoTexto) ? sexoTexto : "Ingresar sexo";
                             cmbTipoUsuario.SelectedItem = cmbTipoUsuario.Items.Contains(tipoTexto) ? tipoTexto : "Ingresar tipo de usuario";
+                            cmd.Parameters.AddWithValue("@Estado", true);
+                            chkEstado.Visible = false;
 
-                            chkEstado.Checked = Convert.ToBoolean(reader["Estado"]); // ✅ Estado visual
 
                             // Cargar firma si existe
                             if (reader["Firma"] != DBNull.Value)

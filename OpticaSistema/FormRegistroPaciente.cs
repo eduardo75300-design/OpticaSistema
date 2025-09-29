@@ -20,7 +20,7 @@ namespace OpticaSistema
         private ConexionDB conexionBD;
         private DataGridView tablaPaciente;
         private Panel panelRegistro;
-        private TextBox txtApellidos, txtNombres, txtDireccion, txtTelefono, txtCorreo, txtEstadoCivil, txtCelular, txtInstruccion, txtDni, txtDepartamento, txtProvincia, txtDistrito,txtEdad, txtOcupacion;
+        private TextBox txtApellidos, txtNombres, txtDireccion, txtTelefono, txtCorreo, txtEstadoCivil, txtCelular, txtInstruccion, txtDni, txtDepartamento, txtProvincia, txtDistrito, txtEdad, txtOcupacion;
         private Button btnGuardar, btnCancelar;
         private bool modoEdicion = false;
         private string dniEditando = "";
@@ -69,12 +69,13 @@ namespace OpticaSistema
             // Panel superior: búsqueda + botones
             TableLayoutPanel panelSuperior = new TableLayoutPanel();
             panelSuperior.Dock = DockStyle.Fill;
-            panelSuperior.ColumnCount = 4;
+            panelSuperior.ColumnCount = 5;
             panelSuperior.RowCount = 1;
             panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80));   // Label DNI
             panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));  // TextBox
-            panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));  // Buscar
+            panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));  // Buscar
             panelSuperior.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));  // Registrar
+            panelSuperior.ColumnStyles[3] = new ColumnStyle(SizeType.Absolute, 120);
             layout.Controls.Add(panelSuperior, 0, 1);
 
             Label lblDni = new Label();
@@ -92,6 +93,7 @@ namespace OpticaSistema
             txtBuscarDni.Margin = new Padding(0, 10, 0, 0);
             panelSuperior.Controls.Add(txtBuscarDni, 1, 0);
 
+            // Botón BUSCAR
             Button btnBuscar = new Button();
             btnBuscar.Text = "BUSCAR";
             btnBuscar.Font = new Font("Segoe UI", 11, FontStyle.Bold);
@@ -100,7 +102,20 @@ namespace OpticaSistema
             btnBuscar.FlatStyle = FlatStyle.Flat;
             btnBuscar.Dock = DockStyle.Fill;
             btnBuscar.Margin = new Padding(5, 10, 5, 10);
+            btnBuscar.MinimumSize = new Size(130, 45);
             panelSuperior.Controls.Add(btnBuscar, 2, 0);
+
+            // Botón LIMPIAR
+            Button btnLimpiar = new Button();
+            btnLimpiar.Text = "ACTUALIZAR";
+            btnLimpiar.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnLimpiar.BackColor = Color.SteelBlue;
+            btnLimpiar.ForeColor = Color.White;
+            btnLimpiar.FlatStyle = FlatStyle.Flat;
+            btnLimpiar.Dock = DockStyle.Fill;
+            btnLimpiar.Margin = new Padding(5, 10, 5, 10);
+            btnLimpiar.MinimumSize = new Size(150, 45);
+            panelSuperior.Controls.Add(btnLimpiar, 3, 0);
 
             Button btnRegistrar = new Button();
             btnRegistrar.Text = "REGISTRAR";
@@ -110,7 +125,7 @@ namespace OpticaSistema
             btnRegistrar.FlatStyle = FlatStyle.Flat;
             btnRegistrar.Anchor = AnchorStyles.Right;
             btnRegistrar.Margin = new Padding(5, 10, 5, 10);
-            panelSuperior.Controls.Add(btnRegistrar, 3, 0);
+            panelSuperior.Controls.Add(btnRegistrar, 4, 0);
             btnRegistrar.MinimumSize = new Size(130, 45);
 
             // Tabla de usuarios
@@ -162,7 +177,6 @@ namespace OpticaSistema
 
             // Panel de registro
             panelRegistro = new Panel();
-            panelRegistro.Size = new Size(650, 800);
             panelRegistro.Location = new Point((this.Width - panelRegistro.Width) / 2, -130);
             panelRegistro.BackColor = Color.White;
             panelRegistro.BorderStyle = BorderStyle.None;
@@ -182,10 +196,10 @@ namespace OpticaSistema
 
             // Fuente y tamaño de campos
             Font campoFont = new Font("Segoe UI", 11);
-            Size campoSize = new Size(520, 35);
+            Size campoSize = new Size(400, 45);
 
             // Campos de entrada
-            txtNombres = new TextBox {Font = campoFont, Size = campoSize, PlaceholderText = "Nombres", Margin = new Padding(0, 12, 0, 0) };
+            txtNombres = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Nombres", Margin = new Padding(0, 12, 0, 0) };
             txtApellidos = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Apellidos", Margin = new Padding(0, 12, 0, 0) };
             txtDireccion = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Dirección", Margin = new Padding(0, 12, 0, 0) };
             txtTelefono = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Teléfono", Margin = new Padding(0, 12, 0, 0) };
@@ -197,7 +211,7 @@ namespace OpticaSistema
             txtDepartamento = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Departamento", Margin = new Padding(0, 12, 0, 0) };
             txtProvincia = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Provincia", Margin = new Padding(0, 12, 0, 0) };
             txtDistrito = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Distrito", Margin = new Padding(0, 12, 0, 0) };
-            chkEstado = new CheckBox { Text = "Activo", Font = campoFont, Checked = true, Margin = new Padding(0, 12, 0, 0),AutoSize = true };
+            chkEstado = new CheckBox { Text = "Activo", Font = campoFont, Checked = true, Margin = new Padding(0, 12, 0, 0), AutoSize = true };
 
             dtpFechaNacimiento = new DateTimePicker
             {
@@ -212,26 +226,6 @@ namespace OpticaSistema
             txtEdad.ReadOnly = true;
             txtEdad.Enabled = false;
             txtOcupacion = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Ocupación", Margin = new Padding(0, 12, 0, 0) };
-            Label lblFechaNacimiento = new Label
-            {
-                Text = "Fecha de Nacimiento",
-                Font = campoFont,
-                ForeColor = Color.Black,
-                Size = campoSize,
-                AutoSize = true,
-                Margin = new Padding(0, 20, 0, 0)
-            };
-
-            Label lblEdad = new Label
-            {
-                Text = "Edad",
-                Font = campoFont,
-                Size = campoSize,
-                ForeColor = Color.Black,
-                AutoSize = true,
-                Margin = new Padding(0, 20, 0, 0)
-            };
-
             dtpFechaNacimiento.ValueChanged += (s, e) =>
             {
                 DateTime fechaNacimiento = dtpFechaNacimiento.Value;
@@ -288,30 +282,61 @@ namespace OpticaSistema
                 TextAlign = ContentAlignment.MiddleCenter
             };
             panelRegistro.Controls.Add(lblTituloRegistro);
+            Control CrearTitulo(string titulo)
+            {
+                return new Label
+                {
+                    Text = titulo,
+                    Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                    AutoSize = true,
+                    Padding = new Padding(0, 10, 0, 0), // espacio abajo dentro del label
+                    TextAlign = ContentAlignment.BottomLeft // alinea el texto abajo
 
+
+
+                };
+
+
+            }
             // Contenedor de campos
             FlowLayoutPanel contenedor = new FlowLayoutPanel();
             contenedor.FlowDirection = FlowDirection.TopDown;
-            contenedor.Dock = DockStyle.Fill;
             contenedor.WrapContents = false;
+            contenedor.Dock = DockStyle.Fill;
             contenedor.AutoScroll = true;
+            contenedor.WrapContents = false;
+            contenedor.Padding = new Padding(50, 0, 0, 0);
+            contenedor.Controls.Add(CrearTitulo("Nombres"));
             contenedor.Controls.Add(txtNombres);
+            contenedor.Controls.Add(CrearTitulo("Apellidos"));
             contenedor.Controls.Add(txtApellidos);
+            contenedor.Controls.Add(CrearTitulo("Dirección"));
             contenedor.Controls.Add(txtDireccion);
+            contenedor.Controls.Add(CrearTitulo("Teléfono"));
             contenedor.Controls.Add(txtTelefono);
+            contenedor.Controls.Add(CrearTitulo("Correo"));
             contenedor.Controls.Add(txtCorreo);
+            contenedor.Controls.Add(CrearTitulo("Estado Civil"));
             contenedor.Controls.Add(txtEstadoCivil);
+            contenedor.Controls.Add(CrearTitulo("Celular"));
             contenedor.Controls.Add(txtCelular);
+            contenedor.Controls.Add(CrearTitulo("Instrucción"));
             contenedor.Controls.Add(txtInstruccion);
+            contenedor.Controls.Add(CrearTitulo("DNI"));
             contenedor.Controls.Add(txtDni);
+            contenedor.Controls.Add(CrearTitulo("Departamento"));
             contenedor.Controls.Add(txtDepartamento);
+            contenedor.Controls.Add(CrearTitulo("Provincia"));
             contenedor.Controls.Add(txtProvincia);
+            contenedor.Controls.Add(CrearTitulo("Distrito"));
             contenedor.Controls.Add(txtDistrito);
+            contenedor.Controls.Add(CrearTitulo("Sexo"));
             contenedor.Controls.Add(cmbSexo);
+            contenedor.Controls.Add(CrearTitulo("Ocupación"));
             contenedor.Controls.Add(txtOcupacion);
-            contenedor.Controls.Add(lblFechaNacimiento);
+            contenedor.Controls.Add(CrearTitulo("Fecha de Nacimiento"));
             contenedor.Controls.Add(dtpFechaNacimiento);
-            contenedor.Controls.Add(lblEdad);
+            contenedor.Controls.Add(CrearTitulo("Edad"));
             contenedor.Controls.Add(txtEdad);
             contenedor.Controls.Add(chkEstado);
 
@@ -347,6 +372,8 @@ namespace OpticaSistema
 
             // Agregar panel al formulario
             this.Controls.Add(panelRegistro);
+            this.Resize += (s, e) => AjustarPanelRegistro();
+            AjustarPanelRegistro();
 
             btnRegistrar.Click += (s, e) =>
             {
@@ -367,15 +394,19 @@ namespace OpticaSistema
                 dniEditando = null;
 
             };
+            btnLimpiar.Click += (s, e) =>
+            {
+                CargarPaciente();
+            };
             btnGuardar.Click += (s, e) =>
             {
                 string sexoSeleccionado = cmbSexo.SelectedItem?.ToString();
-                
+
                 if (string.IsNullOrWhiteSpace(txtNombres.Text) ||
                     string.IsNullOrWhiteSpace(txtApellidos.Text) ||
-                    string.IsNullOrWhiteSpace(txtDni.Text)||
+                    string.IsNullOrWhiteSpace(txtDni.Text) ||
                     string.IsNullOrWhiteSpace(dtpFechaNacimiento.Text))
-                    
+
 
                 {
                     MessageBox.Show("Por favor, complete todos los campos.");
@@ -441,7 +472,7 @@ namespace OpticaSistema
                             cmd.Parameters.AddWithValue("@edad", txtEdad.Text.Trim());
                             cmd.Parameters.AddWithValue("@ocupacion", txtOcupacion.Text.Trim());
                             cmd.Parameters.AddWithValue("@dni", dniEditando);
-                            cmd.Parameters.AddWithValue("@estado", chkEstado.Checked);
+                            cmd.Parameters.AddWithValue("@estado", true);
                             cmd.ExecuteNonQuery();
                             MessageBox.Show("Usuario actualizado correctamente.");
                         }
@@ -680,7 +711,8 @@ namespace OpticaSistema
                             dtpFechaNacimiento.Value = DateTime.Parse(reader["FechaNacimiento"].ToString());
                             txtEdad.Text = reader["Edad"].ToString();
                             txtOcupacion.Text = reader["Ocupacion"].ToString();
-                            chkEstado.Checked = Convert.ToBoolean(reader["Estado"]);
+                            cmd.Parameters.AddWithValue("@Estado", true);
+                            chkEstado.Visible = false;
 
                             // Si estás usando ComboBox para Sexo
                             string sexo = reader["Sexo"].ToString();
@@ -738,6 +770,21 @@ namespace OpticaSistema
                 }
             }
         }
-    }
+    
+    private void AjustarPanelRegistro()
+        {
+            if (panelRegistro != null)
+            {
+                int ancho = (int)(this.ClientSize.Width * 0.3);   // 60% del ancho de la ventana
+                int alto = (int)(this.ClientSize.Height * 0.82);   // 80% del alto de la ventana
 
+                panelRegistro.Size = new Size(ancho, alto);
+                panelRegistro.Location = new Point(
+                    (this.ClientSize.Width - panelRegistro.Width) / 2,
+                    (this.ClientSize.Height - panelRegistro.Height) / 2
+                );
+            }
+        }
+
+    }
 }
