@@ -430,9 +430,21 @@ namespace OpticaSistema
                     try
                     {
                         cn.Open();
-
+                        string dniIngresado = txtDni.Text.Trim();
                         if (modoEdicion)
                         {
+                            string verificarQuery = "SELECT COUNT(*) FROM PacienteBD WHERE Dni = @dni AND Dni <> @dniActual";
+                            SqlCommand verificarCmd = new SqlCommand(verificarQuery, cn);
+                            verificarCmd.Parameters.AddWithValue("@dni", dniIngresado);
+                            verificarCmd.Parameters.AddWithValue("@dniActual", dniEditando);
+
+                            int existe = (int)verificarCmd.ExecuteScalar();
+
+                            if (existe > 0)
+                            {
+                                MessageBox.Show("Ya existe un usuario registrado con ese DNI.");
+                                return;
+                            }
                             // Actualizar usuario existente
                             string query = @"
     UPDATE PacienteBD SET
