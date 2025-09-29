@@ -19,7 +19,7 @@ namespace OpticaSistema
         private DataGridView tablaUsuarios;
         private Panel panelRegistro;
         private TextBox txtNombre, txtApellido, txtDni, txtCorreo, txtClave, txtTipoUsuario, txtDireccion, txtCelular;
-        private Button btnGuardar, btnCancelar;
+        private Button btnGuardar, btnCancelar, btnLimpiarFirma;
         private bool modoEdicion = false;
         private string dniEditando = "";
         private ComboBox cmbSexo;
@@ -177,7 +177,6 @@ namespace OpticaSistema
 
             // Panel de registro
             panelRegistro = new Panel();
-            panelRegistro.Size = new Size(600, 800);
             panelRegistro.Location = new Point((this.Width - panelRegistro.Width) / 2, -130);
             panelRegistro.BackColor = Color.White;
             panelRegistro.BorderStyle = BorderStyle.None;
@@ -197,7 +196,7 @@ namespace OpticaSistema
 
             // Fuente y tamaño de campos
             Font campoFont = new Font("Segoe UI", 11);
-            Size campoSize = new Size(520, 35);
+            Size campoSize = new Size(400, 45);
 
             // Campos de entrada
             txtNombre = new TextBox { Font = campoFont, Size = campoSize, PlaceholderText = "Nombres", Margin = new Padding(0, 12, 0, 0) };
@@ -247,8 +246,35 @@ namespace OpticaSistema
                 Text = "Cargar Firma",
                 Size = new Size(200, 40),
                 Font = campoFont,
-                Margin = new Padding(0, 8, 0, 0)
+                Margin = new Padding(0, 0, 8, 0) // espacio a la derecha
             };
+
+            // Botón limpiar firma
+            btnLimpiarFirma = new Button
+            {
+                Text = "Limpiar Firma",
+                Size = new Size(200, 40),
+                Font = campoFont,
+                BackColor = Color.SteelBlue,
+                Margin = new Padding(0, 0, 0, 0)
+            };
+
+            // Panel horizontal
+            FlowLayoutPanel panelBotonesFirma = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = false,
+                Margin = new Padding(0, 8, 0, 0),
+                Dock = DockStyle.None,
+                Padding = new Padding(0),
+            };
+
+            // 👉 Ahora sí los agregamos
+            panelBotonesFirma.Controls.Add(btnCargarFirma);
+            panelBotonesFirma.Controls.Add(btnLimpiarFirma);
+
 
             btnCargarFirma.Click += (s, e) =>
             {
@@ -298,12 +324,15 @@ namespace OpticaSistema
             };
             panelRegistro.Controls.Add(lblTituloRegistro);
 
+
             // Contenedor de campos
             FlowLayoutPanel contenedor = new FlowLayoutPanel();
             contenedor.FlowDirection = FlowDirection.TopDown;
-            contenedor.Dock = DockStyle.Fill;
             contenedor.WrapContents = false;
+            contenedor.Dock = DockStyle.Fill;
             contenedor.AutoScroll = true;
+            contenedor.WrapContents = false;
+            contenedor.Padding = new Padding(50, 10, 0, 0);
             contenedor.Controls.Add(txtNombre);
             contenedor.Controls.Add(txtApellido);
             contenedor.Controls.Add(txtDni);
@@ -316,12 +345,10 @@ namespace OpticaSistema
             contenedor.Controls.Add(cmbTipoUsuario);
             contenedor.Controls.Add(chkEstado);
             contenedor.Controls.Add(pbFirma);
-            contenedor.Controls.Add(btnCargarFirma);
-
+            contenedor.Controls.Add(panelBotonesFirma);
 
             // Contenedor de botones
             FlowLayoutPanel botones = new FlowLayoutPanel();
-            botones.FlowDirection = FlowDirection.LeftToRight;
             botones.Dock = DockStyle.Fill;
             botones.Anchor = AnchorStyles.None;
             botones.Padding = new Padding(0, 20, 0, 0);
@@ -335,14 +362,24 @@ namespace OpticaSistema
             TableLayoutPanel layoutRegistro = new TableLayoutPanel();
             layoutRegistro.Dock = DockStyle.Fill;
             layoutRegistro.RowCount = 3;
-            layoutRegistro.ColumnCount = 1;
+            layoutRegistro.ColumnCount = 3;
+
+            // Filas
             layoutRegistro.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));   // Título
             layoutRegistro.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Campos
-            layoutRegistro.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));  // Botones
+            layoutRegistro.RowStyles.Add(new RowStyle(SizeType.Absolute, 100)); // Botones
 
+            // Columnas (para centrar horizontalmente)
+            layoutRegistro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 0));  // izquierda
+            layoutRegistro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));  // centro
+            layoutRegistro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 0));  // derecha
+
+            // Colocar controles
             layoutRegistro.Controls.Add(lblTituloRegistro, 0, 0);
-            layoutRegistro.Controls.Add(contenedor, 0, 1);
-            layoutRegistro.Controls.Add(botones, 0, 2);
+            layoutRegistro.SetColumnSpan(lblTituloRegistro, 3);
+
+            layoutRegistro.Controls.Add(contenedor, 1, 1); // 👈 ahora al centro
+            layoutRegistro.Controls.Add(botones, 1, 2);    // 👈 también centrados
 
             // Agregar layout al panel
             panelRegistro.Controls.Clear();
@@ -350,7 +387,8 @@ namespace OpticaSistema
 
             // Agregar panel al formulario
             this.Controls.Add(panelRegistro);
-
+            this.Resize += (s, e) => AjustarPanelRegistro();
+            AjustarPanelRegistro();
 
             btnRegistrar.Click += (s, e) =>
             {
@@ -372,7 +410,10 @@ namespace OpticaSistema
 
             };
 
-
+            btnLimpiarFirma.Click += (s, e) =>
+            {
+                pbFirma.Image = null; // limpia la firma
+            };
             btnGuardar.Click += (s, e) =>
             {
                 string sexoSeleccionado = cmbSexo.SelectedItem?.ToString();
@@ -434,11 +475,11 @@ namespace OpticaSistema
 
                             int existe = (int)verificarCmd.ExecuteScalar();
 
-                            /*if (existe > 0)
+                            if (existe > 0)
                             {
                                 MessageBox.Show("Ya existe un usuario registrado con ese DNI.");
                                 return;
-                            }*/
+                            }
 
                             // Actualizar usuario existente
                             string query = @"UPDATE UsuarioBD SET Nombres = @nombres, Apellidos = @apellidos, Contraseña = @clave, Correo = @correo, Direccion = @direccion, Celular = @celular, Sexo = @sexo, TipoUsuario = @tipo, Estado = @estado, Firma = @firma, Dni = @dniNuevo WHERE Dni = @dni";
@@ -502,6 +543,7 @@ namespace OpticaSistema
 
                         // Limpiar campos y cerrar panel
                         LimpiarCamposRegistro();
+
                         modoEdicion = false;
                         dniEditando = "";
 
@@ -769,7 +811,20 @@ namespace OpticaSistema
             cmbTipoUsuario.SelectedIndex = 0;
 
         }
+        private void AjustarPanelRegistro()
+        {
+            if (panelRegistro != null)
+            {
+                int ancho = (int)(this.ClientSize.Width * 0.3);   // 60% del ancho de la ventana
+                int alto = (int)(this.ClientSize.Height * 0.82);   // 80% del alto de la ventana
 
+                panelRegistro.Size = new Size(ancho, alto);
+                panelRegistro.Location = new Point(
+                    (this.ClientSize.Width - panelRegistro.Width) / 2,
+                    (this.ClientSize.Height - panelRegistro.Height) / 2
+                );
+            }
+        }
 
     }
 
