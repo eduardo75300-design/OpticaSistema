@@ -434,11 +434,11 @@ namespace OpticaSistema
 
                             int existe = (int)verificarCmd.ExecuteScalar();
 
-                            if (existe > 0)
+                            /*if (existe > 0)
                             {
                                 MessageBox.Show("Ya existe un usuario registrado con ese DNI.");
                                 return;
-                            }
+                            }*/
 
                             // Actualizar usuario existente
                             string query = @"UPDATE UsuarioBD SET Nombres = @nombres, Apellidos = @apellidos, Contraseña = @clave, Correo = @correo, Direccion = @direccion, Celular = @celular, Sexo = @sexo, TipoUsuario = @tipo, Estado = @estado, Firma = @firma, Dni = @dniNuevo WHERE Dni = @dni";
