@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace OpticaSistema
 {
-    public partial class Login : Form
+    public partial class FormLogin : Form
     {
         private ConexionDB conexionBD;
         public static class SesionUsuario
@@ -13,9 +13,10 @@ namespace OpticaSistema
             public static string TipoUsuario { get; set; }
 
         }
-        public Login()
+        public FormLogin()
         {
             InitializeComponent();
+            this.FormClosing += Form1_Load;
             conexionBD = new ConexionDB();
 
             // Estilo del formulario fijo
@@ -28,7 +29,7 @@ namespace OpticaSistema
             this.BackColor = Color.White;
 
             // Imagen lateral
-            string rutaImagen = "Imagenes/log.ico";
+            string rutaImagen = "Imagenes/log.png";
             if (File.Exists(rutaImagen))
             {
                 PictureBox imagen = new PictureBox();
@@ -107,9 +108,10 @@ namespace OpticaSistema
         {
             this.Text = "OpticaSistema - Inicio de sesión";
             this.Icon = new Icon("Imagenes/log.ico");
-
+            ActualizarEdades();
 
         }
+
 
         private void label1_Click(object sender, EventArgs e)
         {
@@ -128,27 +130,53 @@ namespace OpticaSistema
 
         private async void btnIngresar_Click(object sender, EventArgs e)
         {
-            string usuario = txtUsuario.Text.Trim(); // DNI
+            string usuario = txtUsuario.Text.Trim();
             string contrasena = txtContrasena.Text.Trim();
 
             if (ValidarUsuario(usuario, contrasena))
             {
-                // Obtener y guardar el nombre del usuario
-                CargarDatosUsuario(usuario); // guarda nombre y tipo
+                CargarDatosUsuario(usuario);
+                Sesion.UsuarioDni = usuario;
+
                 Bienvenido bienvenida = new Bienvenido();
                 bienvenida.ShowDialog();
 
-                Inicio inicioForm = new Inicio();
-                inicioForm.Show();
-                this.Hide();
+                FormInicio inicioForm = new FormInicio();
 
+                // Cuando se cierre el menú, cerrar también el login
+                inicioForm.FormClosed += (s, args) => this.Close();
+
+                this.Hide(); // Oculta el login sin cerrarlo
+                inicioForm.Show(); // Abre el menú principal
             }
             else
             {
                 MessageBox.Show("Usuario o Contraseña incorrecto", "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
+
+
+
+
+
+
         }
+
+        public class AppContext : ApplicationContext
+        {
+            public AppContext(Form initialForm)
+            {
+                initialForm.FormClosed += (s, e) =>
+                {
+                    // Cuando se cierra el formulario actual, termina la aplicación
+                    ExitThread();
+                };
+
+                initialForm.Show();
+            }
+        }
+
+
 
         private bool ValidarUsuario(string usuario, string contrasena)
         {
@@ -220,9 +248,38 @@ namespace OpticaSistema
         }
 
 
+        public static class Sesion
+        {
+            public static string UsuarioDni;
+        }
 
+        private void ActualizarEdades()
+        {
+            using (SqlConnection cn = conexionBD.Conectar())
+            {
+                try
+                {
+                    cn.Open();
+                    string query = @"
+                UPDATE PacienteBD
+                SET Edad = DATEDIFF(YEAR, FechaNacimiento, GETDATE()) -
+                           CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, FechaNacimiento, GETDATE()), FechaNacimiento) > GETDATE() THEN 1 ELSE 0 END";
+                    SqlCommand cmd = new SqlCommand(query, cn);
+                    cmd.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al actualizar edades: " + ex.Message);
+                }
+            }
+        }
 
 
 
     }
+
+
 }
+
+
+

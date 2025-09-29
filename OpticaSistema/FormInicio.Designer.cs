@@ -1,6 +1,6 @@
 ﻿namespace OpticaSistema
 {
-    partial class Inicio
+    partial class FormInicio
     {
         /// <summary>
         /// Required designer variable.

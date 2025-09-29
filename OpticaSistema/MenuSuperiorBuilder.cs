@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static OpticaSistema.Login;
+using static OpticaSistema.FormLogin;
 
 namespace OpticaSistema
 {
@@ -102,17 +103,18 @@ namespace OpticaSistema
             List<string> secciones = new List<string>
 {
     "INICIO",
-    "HISTORIAL CLÍNICO",
-    "REGISTRO DE PACIENTE"
+    "HISTORIAL CLÍNICO"
 };
-
+            if (SesionUsuario.TipoUsuario == "S" || SesionUsuario.TipoUsuario == "A")
+            {
+                secciones.Add("REGISTRO DE PACIENTE");
+            }
             if (SesionUsuario.TipoUsuario == "A")
             {
                 secciones.Add("ADMINISTRACIÓN USUARIO");
             }
-
+           
             secciones.Add("CERRAR SESIÓN");
-
             for (int i = 0; i < secciones.Count; i++)
             {
                 Label lbl = new Label();
@@ -155,8 +157,8 @@ namespace OpticaSistema
                         switch (lbl.Text)
                         {
                             case "INICIO":
-                                if (formulario is Inicio) return;
-                                destino = new Inicio();
+                                if (formulario is FormInicio) return;
+                                destino = new FormInicio();
                                 break;
 
                             case "REGISTRO DE PACIENTE":
@@ -170,7 +172,7 @@ namespace OpticaSistema
                                 break;
 
                             case "CERRAR SESIÓN":
-                                System.Windows.Forms.Application.Exit();
+                                formulario.Close();
                                 return;
                         }
 
@@ -180,7 +182,10 @@ namespace OpticaSistema
                             destino.Show();
                             formulario.Hide();
                         }
+
+
                     };
+
                 }
 
                 menuLayout.Controls.Add(lbl, i + 1, 0);
