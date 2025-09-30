@@ -55,8 +55,6 @@ namespace OpticaSistema
             this.WindowState = FormWindowState.Maximized;
             this.BackColor = Color.White;
 
-
-
             // Contenedor principal
             TableLayoutPanel layout = new TableLayoutPanel();
             layout.Dock = DockStyle.Fill;
@@ -72,7 +70,7 @@ namespace OpticaSistema
 
             // Título
             Label titulo = new Label();
-            titulo.Text = "USUARIOS";
+            titulo.Text = "REGISTRO DE USUARIOS";
             titulo.Font = new Font("Segoe UI", 24, FontStyle.Bold);
             titulo.ForeColor = Color.DarkBlue;
             titulo.Dock = DockStyle.Fill;
@@ -742,7 +740,9 @@ namespace OpticaSistema
                     return;
                 }
 
-                DialogResult confirmacion = MessageBox.Show($"¿Deseas dar de baja al usuario con DNI {dni}?", "Confirmar baja", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                DialogResult confirmacion = MessageBox.Show($"¿Seguro que deseas eliminar el historial del paciente con DNI {dni}?",             "Confirmar eliminación",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning);
 
                 if (confirmacion == DialogResult.Yes)
                 {
@@ -756,7 +756,7 @@ namespace OpticaSistema
                             cmd.Parameters.AddWithValue("@dni", dni);
                             cmd.ExecuteNonQuery();
 
-                            MessageBox.Show("Usuario dado de baja correctamente.");
+                            MessageBox.Show("Usuario eliminado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             CargarUsuarios();
                         }
                         catch (Exception ex)
@@ -862,7 +862,7 @@ namespace OpticaSistema
         {
             if (panelRegistro != null)
             {
-                int ancho = (int)(this.ClientSize.Width * 0.3);   // 60% del ancho de la ventana
+                int ancho = (int)(this.ClientSize.Width * 0.35);   // 60% del ancho de la ventana
                 int alto = (int)(this.ClientSize.Height * 0.82);   // 80% del alto de la ventana
 
                 panelRegistro.Size = new Size(ancho, alto);

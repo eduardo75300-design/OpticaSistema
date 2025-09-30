@@ -58,7 +58,7 @@ namespace OpticaSistema
 
             // Título
             Label titulo = new Label();
-            titulo.Text = "PACIENTES";
+            titulo.Text = "REGISTRO DE PACIENTES";
             titulo.Font = new Font("Segoe UI", 24, FontStyle.Bold);
             titulo.ForeColor = Color.DarkBlue;
             titulo.Dock = DockStyle.Fill;
@@ -787,7 +787,7 @@ namespace OpticaSistema
         {
             if (panelRegistro != null)
             {
-                int ancho = (int)(this.ClientSize.Width * 0.3);   // 60% del ancho de la ventana
+                int ancho = (int)(this.ClientSize.Width * 0.35);   // 60% del ancho de la ventana
                 int alto = (int)(this.ClientSize.Height * 0.82);   // 80% del alto de la ventana
 
                 panelRegistro.Size = new Size(ancho, alto);
@@ -799,4 +799,5 @@ namespace OpticaSistema
         }
 
     }
+
 }

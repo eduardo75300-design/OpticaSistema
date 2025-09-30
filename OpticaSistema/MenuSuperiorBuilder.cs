@@ -49,55 +49,67 @@ namespace OpticaSistema
 
             // Submenú para HISTORIAL CLÍNICO
             Panel subMenuHistorial = new Panel();
-            subMenuHistorial.Height = 80; // altura fija
             subMenuHistorial.BackColor = Color.SteelBlue;
             subMenuHistorial.Visible = false;
             subMenuHistorial.BorderStyle = BorderStyle.None;
             formulario.Controls.Add(subMenuHistorial);
 
-            // Subopción: Registrar Historial
-            Label lblRegistrar = new Label();
-            lblRegistrar.Text = "REGISTRAR";
-            lblRegistrar.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-            lblRegistrar.ForeColor = Color.White;
-            lblRegistrar.BackColor = Color.SteelBlue;
-            lblRegistrar.Dock = DockStyle.Top;
-            lblRegistrar.Height = 40;
-            lblRegistrar.TextAlign = ContentAlignment.MiddleCenter;
-            lblRegistrar.Cursor = Cursors.Hand;
-            lblRegistrar.MouseEnter += (s, e) => lblRegistrar.BackColor = Color.LightSteelBlue;
-            lblRegistrar.MouseLeave += (s, e) => lblRegistrar.BackColor = Color.SteelBlue;
-            lblRegistrar.Click += (s, e) =>
+            // Lista de opciones permitidas según tipo de usuario
+            List<(string texto, Action accion)> opcionesHistorial = new List<(string, Action)>
             {
+                ("REGISTRAR", () =>{
                 if (formulario is FormRegistrarHistorial) return;
                 FormRegistrarHistorial registrar = new FormRegistrarHistorial();
                 registrar.WindowState = FormWindowState.Maximized;
                 registrar.Show();
                 formulario.Hide();
+                }),
+                ("BUSCAR", () =>
+                {
+                    if (formulario is FormBuscarHistorial) return;
+                    FormBuscarHistorial buscar = new FormBuscarHistorial();
+                    buscar.WindowState = FormWindowState.Maximized;
+                    buscar.Show();
+                    formulario.Hide();
+                })
             };
-            subMenuHistorial.Controls.Add(lblRegistrar);
 
-            // Subopción: Buscar Historial
-            Label lblBuscar = new Label();
-            lblBuscar.Text = "BUSCAR";
-            lblBuscar.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-            lblBuscar.ForeColor = Color.White;
-            lblBuscar.BackColor = Color.SteelBlue;
-            lblBuscar.Dock = DockStyle.Top;
-            lblBuscar.Height = 40;
-            lblBuscar.TextAlign = ContentAlignment.MiddleCenter;
-            lblBuscar.Cursor = Cursors.Hand;
-            lblBuscar.MouseEnter += (s, e) => lblBuscar.BackColor = Color.LightSteelBlue;
-            lblBuscar.MouseLeave += (s, e) => lblBuscar.BackColor = Color.SteelBlue;
-            lblBuscar.Click += (s, e) =>
+            // Solo si el usuario es de tipo "S", agregar "GENERAR"
+            if (SesionUsuario.TipoUsuario == "S" || SesionUsuario.TipoUsuario == "A")
             {
-                if (formulario is FormBuscarHistorial) return;
-                FormBuscarHistorial buscar = new FormBuscarHistorial();
-                buscar.WindowState = FormWindowState.Maximized;
-                buscar.Show();
-                formulario.Hide();
-            };
-            subMenuHistorial.Controls.Add(lblBuscar);
+                opcionesHistorial.Add(("GENERAR", () =>
+                {
+                    if (formulario is FormGenerarHistorial) return;
+                    FormGenerarHistorial generar = new FormGenerarHistorial();
+                    generar.WindowState = FormWindowState.Maximized;
+                    generar.Show();
+                    formulario.Hide();
+                }
+                ));
+            }
+
+            // Crear dinámicamente los labels según opciones permitidas
+            foreach (var (texto, accion) in opcionesHistorial)
+            {
+                Label lblOpcion = new Label();
+                lblOpcion.Text = texto;
+                lblOpcion.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+                lblOpcion.ForeColor = Color.White;
+                lblOpcion.BackColor = Color.SteelBlue;
+                lblOpcion.Dock = DockStyle.Top;
+                lblOpcion.Height = 40;
+                lblOpcion.TextAlign = ContentAlignment.MiddleCenter;
+                lblOpcion.Cursor = Cursors.Hand;
+                lblOpcion.MouseEnter += (s, e) => lblOpcion.BackColor = Color.LightSteelBlue;
+                lblOpcion.MouseLeave += (s, e) => lblOpcion.BackColor = Color.SteelBlue;
+                lblOpcion.Click += (s, e) => accion();
+
+                subMenuHistorial.Controls.Add(lblOpcion);
+            }
+
+            // Ajustar altura del submenú según cantidad de opciones
+            subMenuHistorial.Height = subMenuHistorial.Controls.Count * 40;
+
 
             // Opciones del menú principal
             List<string> secciones = new List<string>
