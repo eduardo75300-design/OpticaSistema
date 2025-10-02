@@ -29,11 +29,11 @@ namespace OpticaSistema
             layout.Dock = DockStyle.Fill;
             layout.ColumnCount = 1;
             layout.RowCount = 5;
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150));   // Título
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));   // Filtro y botones
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));    // Campos
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));    // Botón REGISTRAR
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));    // Espacio inferior
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 15));   // Título ocupa 15% del alto
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 10));   // Filtro y botones
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 65));   // Campos
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 7));    // Botón REGISTRAR
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 3));    // Espacio inferior
             layout.Padding = new Padding(50, 20, 50, 20);
             this.Controls.Add(layout);
 
@@ -112,14 +112,36 @@ namespace OpticaSistema
             contenedorCentral.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70)); // Centro
             contenedorCentral.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
 
-            // Panel horizontal dentro de columna central
+            // Contenedor que maneja el scroll y mantiene centrado
+            Panel wrapper = new Panel();
+            wrapper.Dock = DockStyle.Fill;
+            wrapper.AutoScroll = true;   // El scroll vive aquí
+            wrapper.Padding = new Padding(10);
+
+            // FlowLayoutPanel dentro del wrapper
             panelHorizontal = new FlowLayoutPanel();
-            panelHorizontal.Dock = DockStyle.Fill;
             panelHorizontal.FlowDirection = FlowDirection.TopDown;
             panelHorizontal.WrapContents = false;
-            panelHorizontal.AutoScroll = true;
-            panelHorizontal.Padding = new Padding(10);
-            panelHorizontal.Margin = new Padding(0, 10, 0, 10);
+            panelHorizontal.AutoSize = true;
+            panelHorizontal.Anchor = AnchorStyles.Top;  // que se quede arriba centrado
+
+            // IMPORTANTE: centrado manual
+            panelHorizontal.Location = new Point(
+                (wrapper.ClientSize.Width - panelHorizontal.Width) / 2,
+                10
+            );
+
+            // Recalcular centrado cada vez que cambie tamaño
+            wrapper.Resize += (s, e) =>
+            {
+                panelHorizontal.Left = (wrapper.ClientSize.Width - panelHorizontal.Width) / 2;
+            };
+
+            // Agregar flow al wrapper
+            wrapper.Controls.Add(panelHorizontal);
+
+            // Agregar wrapper a la columna central del contenedor
+            contenedorCentral.Controls.Add(wrapper, 1, 0);
 
 
             // --- SECCIÓN 1: DATOS BÁSICOS Y FECHA (Organizado en un sub-panel horizontal) ---
@@ -236,7 +258,7 @@ namespace OpticaSistema
             // --- FIN NUEVOS CAMPOS ---
 
             // Agregar el panel horizontal en la columna central
-            contenedorCentral.Controls.Add(panelHorizontal, 1, 0);
+            //contenedorCentral.Controls.Add(panelHorizontal, 1, 0);
 
             // Agregar al layout principal en la fila 2
             layout.Controls.Add(contenedorCentral, 0, 2);
@@ -368,7 +390,7 @@ namespace OpticaSistema
         // Método para crear la tabla de Correctores (la parte más compleja)
         private Control CrearPanelDiagnostico()
         {
-            // FlowLayoutPanel para el título y la tabla
+            // FlowLayoutPanel para el título y la tabla+textarea
             FlowLayoutPanel panelReceta = new FlowLayoutPanel();
             panelReceta.FlowDirection = FlowDirection.TopDown;
             panelReceta.AutoSize = true;
@@ -385,13 +407,24 @@ namespace OpticaSistema
             lblTitulo.Margin = new Padding(0, 10, 0, 10);
             panelReceta.Controls.Add(lblTitulo);
 
-            // --- Tabla ---
+            // --- Contenedor con 2 columnas: tabla (izq) + textarea (der) ---
+            TableLayoutPanel contenedor = new TableLayoutPanel();
+            contenedor.ColumnCount = 2;
+            contenedor.RowCount = 1;
+            contenedor.AutoSize = true;
+            // Columnas con porcentaje: tabla 55%, textarea 45% -> ajustamos al 50%-50% para que textarea sea más ancho
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F)); // tabla 45%
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F)); // textarea 55%
+
+            // --- Tabla Diagnóstico ---
             TableLayoutPanel tablaDiagnostico = new TableLayoutPanel();
             tablaDiagnostico.Name = "tblDiagnostico";
             tablaDiagnostico.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
             tablaDiagnostico.BackColor = Color.WhiteSmoke;
-            tablaDiagnostico.Width = 800;
+            tablaDiagnostico.Width = 480;
             tablaDiagnostico.Height = 220;
+            tablaDiagnostico.AutoSize = true;
+            tablaDiagnostico.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
             // Columnas: Campo | OD | OI
             tablaDiagnostico.ColumnCount = 3;
@@ -399,15 +432,11 @@ namespace OpticaSistema
             tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));   // OD
             tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));   // OI
 
-            // Filas: 1 cabecera + 6 campos
             string[] campos = { "AV.SC.", "AV.CC.", "PIO/ICARE", "FECHA:", "HORA DE INICIO:", "HORA DE TÉRMINO:" };
-
             tablaDiagnostico.RowCount = campos.Length + 1;
             tablaDiagnostico.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // cabecera
-            for (int i = 0; i < campos.Length; i++)
-                tablaDiagnostico.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
 
-            // --- Cabecera (fila 0) ---
+            // Cabecera
             string[] headers = { "", "OD", "OI" };
             for (int i = 0; i < headers.Length; i++)
             {
@@ -420,12 +449,10 @@ namespace OpticaSistema
                 tablaDiagnostico.Controls.Add(header, i, 0);
             }
 
-            // --- Filas de datos ---
+            // --- Filas ---
             for (int r = 0; r < campos.Length; r++)
             {
                 int fila = r + 1;
-
-                // Columna 0 → nombre del campo
                 Label lblCampo = new Label();
                 lblCampo.Text = campos[r];
                 lblCampo.Dock = DockStyle.Fill;
@@ -433,7 +460,6 @@ namespace OpticaSistema
                 lblCampo.Font = new Font("Segoe UI", 11, FontStyle.Bold);
                 tablaDiagnostico.Controls.Add(lblCampo, 0, fila);
 
-                // --- Casos especiales ---
                 if (campos[r] == "FECHA:")
                 {
                     DateTimePicker dtpFecha = new DateTimePicker();
@@ -441,42 +467,64 @@ namespace OpticaSistema
                     dtpFecha.Dock = DockStyle.Fill;
                     dtpFecha.Font = new Font("Segoe UI", 11);
                     tablaDiagnostico.Controls.Add(dtpFecha, 1, fila);
-
-                    // 👉 Que ocupe OD y OI
                     tablaDiagnostico.SetColumnSpan(dtpFecha, 2);
                 }
                 else if (campos[r] == "HORA DE INICIO:" || campos[r] == "HORA DE TÉRMINO:")
                 {
                     DateTimePicker dtpHora = new DateTimePicker();
                     dtpHora.Format = DateTimePickerFormat.Time;
-                    dtpHora.ShowUpDown = true; // Muestra solo reloj tipo spinner
+                    dtpHora.ShowUpDown = true;
                     dtpHora.Dock = DockStyle.Fill;
                     dtpHora.Font = new Font("Segoe UI", 11);
                     tablaDiagnostico.Controls.Add(dtpHora, 1, fila);
-
                     tablaDiagnostico.SetColumnSpan(dtpHora, 2);
                 }
                 else
                 {
-                    // --- Campos normales (OD y OI) ---
                     TextBox txtOD = new TextBox();
-                    txtOD.Name = $"txt{campos[r].Replace(" ", "").Replace(".", "")}OD";
                     txtOD.Dock = DockStyle.Fill;
                     txtOD.TextAlign = HorizontalAlignment.Center;
                     txtOD.Font = new Font("Segoe UI", 11);
                     tablaDiagnostico.Controls.Add(txtOD, 1, fila);
 
                     TextBox txtOI = new TextBox();
-                    txtOI.Name = $"txt{campos[r].Replace(" ", "").Replace(".", "")}OI";
                     txtOI.Dock = DockStyle.Fill;
                     txtOI.TextAlign = HorizontalAlignment.Center;
                     txtOI.Font = new Font("Segoe UI", 11);
                     tablaDiagnostico.Controls.Add(txtOI, 2, fila);
                 }
             }
-            panelReceta.Controls.Add(tablaDiagnostico);
+
+            // --- TextArea al costado ---
+            TextBox txtObservaciones = new TextBox();
+            txtObservaciones.Multiline = true;
+            txtObservaciones.ScrollBars = ScrollBars.Vertical;
+            txtObservaciones.Dock = DockStyle.Fill;
+            txtObservaciones.Font = new Font("Segoe UI", 11);
+            txtObservaciones.Height = 220; // mismo alto que la tabla
+            txtObservaciones.Name = "txtObservacionesDiagnostico";
+
+            // Calcular margen izquierdo como 5% del ancho del contenedor
+            int margenIzquierdo = (int)(contenedor.Width * 0.05);
+            txtObservaciones.Margin = new Padding(margenIzquierdo, 0, 0, 0);
+
+            // Ajustar margen dinámicamente al cambiar tamaño del contenedor
+            contenedor.Resize += (s, e) =>
+            {
+                txtObservaciones.Margin = new Padding((int)(contenedor.Width * 0.05), 0, 0, 0);
+            };
+
+            // Agregar tabla y textarea al contenedor
+            contenedor.Controls.Add(tablaDiagnostico, 0, 0);
+            contenedor.Controls.Add(txtObservaciones, 1, 0);
+
+            // Agregar al panel principal
+            panelReceta.Controls.Add(contenedor);
+
             return panelReceta;
         }
+
+
 
 
         // Método para crear la tabla de Correctores (la parte más compleja)
@@ -489,14 +537,7 @@ namespace OpticaSistema
             panelReceta.Margin = new Padding(10);
             panelReceta.Width = 820; // Ajustar ancho para la tabla
 
-            Label lblTitulo = new Label();
-            lblTitulo.Text = "Correctores (Receta de Lentes)";
-            lblTitulo.Font = new Font("Segoe UI", 14, FontStyle.Bold);
-            lblTitulo.AutoSize = false;
-            lblTitulo.Width = panelReceta.Width;
-            lblTitulo.TextAlign = ContentAlignment.MiddleCenter;
-            lblTitulo.Margin = new Padding(0, 10, 0, 10);
-            panelReceta.Controls.Add(lblTitulo);
+            
 
             // TableLayoutPanel para la rejilla de datos
             TableLayoutPanel tablaCorrectores = new TableLayoutPanel();
@@ -508,8 +549,8 @@ namespace OpticaSistema
 
             // Definición de columnas
             tablaCorrectores.ColumnCount = 7;
-            tablaCorrectores.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80)); // Columna 'CORRECTORES'
-            tablaCorrectores.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 40));  // Columna 'OD/OI'
+            tablaCorrectores.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20)); // CORRECTORES
+            tablaCorrectores.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10));  // Columna 'OD/OI'
             tablaCorrectores.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20)); // ESFÉRICO
             tablaCorrectores.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20)); // CILÍNDRICO
             tablaCorrectores.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10)); // EJE
@@ -518,7 +559,7 @@ namespace OpticaSistema
 
             // Definición de filas: 1 (Cabecera) + 4 (Lejos OD, Lejos OI, Cerca OD, Cerca OI)
             tablaCorrectores.RowCount = 5;
-            tablaCorrectores.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            tablaCorrectores.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
             tablaCorrectores.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
             tablaCorrectores.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
             tablaCorrectores.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
