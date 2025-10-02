@@ -22,12 +22,20 @@ namespace OpticaSistema
         private Panel panelRegistro;
         private TextBox txtApellidos, txtNombres, txtDireccion, txtTelefono, txtCorreo, txtEstadoCivil, txtCelular, txtInstruccion, txtDni, txtDepartamento, txtProvincia, txtDistrito, txtEdad, txtOcupacion;
         private Button btnGuardar, btnCancelar;
+        private TableLayoutPanel panelPaginacion;
+        private Button btnAnterior;
+        private Label lblPagina;
+        private Button btnSiguiente;
         private bool modoEdicion = false;
         private string dniEditando = "";
         private ComboBox cmbSexo;
         private Label lblTituloRegistro;
         private DateTimePicker dtpFechaNacimiento;
         private CheckBox chkEstado;
+        private int pageNumber = 1;   // Página actual
+        private int pageSize = 20;    // Registros por página
+        private int totalRecords = 0; // Total de registros
+        private int totalPages = 0;
         Dictionary<string, string> sexoOpciones = new Dictionary<string, string>
             {
                 { "Ingresar sexo", "" },
@@ -47,11 +55,11 @@ namespace OpticaSistema
             TableLayoutPanel layout = new TableLayoutPanel();
             layout.Dock = DockStyle.Fill;
             layout.ColumnCount = 1;
-            layout.RowCount = 4;
+            layout.RowCount = 5;
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 150));   // Título
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));    // Filtro y botones
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));    // Tabla
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));    // Espacio inferior
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // Espacio inferior
             layout.Padding = new Padding(50, 20, 50, 20);
             this.Controls.Add(layout);
 
@@ -170,6 +178,48 @@ namespace OpticaSistema
             colEliminar.DefaultCellStyle.BackColor = Color.White;
             colEliminar.DefaultCellStyle.ForeColor = Color.Black;
             tablaPaciente.Columns.Add(colEliminar);
+
+            // === PANEL DE PAGINACIÓN ===
+            panelPaginacion = new TableLayoutPanel();
+            panelPaginacion.Dock = DockStyle.Fill;
+            panelPaginacion.ColumnCount = 3;
+            panelPaginacion.RowCount = 1;
+            panelPaginacion.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
+            panelPaginacion.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
+            panelPaginacion.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
+
+            // Botón Anterior
+            btnAnterior = new Button();
+            btnAnterior.Text = "Anterior";
+            btnAnterior.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnAnterior.BackColor = Color.SteelBlue;
+            btnAnterior.ForeColor = Color.White;
+            btnAnterior.Dock = DockStyle.Right;
+            btnAnterior.MinimumSize = new Size(120, 35);
+            btnAnterior.Click += btnAnterior_Click;
+            panelPaginacion.Controls.Add(btnAnterior, 0, 0);
+
+            // Label Página
+            lblPagina = new Label();
+            lblPagina.Text = "Página 1 de " + totalPages;
+            lblPagina.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            lblPagina.TextAlign = ContentAlignment.MiddleCenter;
+            lblPagina.Dock = DockStyle.Fill;
+            panelPaginacion.Controls.Add(lblPagina, 1, 0);
+
+            // Botón Siguiente
+            btnSiguiente = new Button();
+            btnSiguiente.Text = "Siguiente";
+            btnSiguiente.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnSiguiente.BackColor = Color.SteelBlue;
+            btnSiguiente.ForeColor = Color.White;
+            btnSiguiente.Dock = DockStyle.Left;
+            btnSiguiente.MinimumSize = new Size(120, 35);
+            btnSiguiente.Click += btnSiguiente_Click;
+            panelPaginacion.Controls.Add(btnSiguiente, 2, 0);
+
+            layout.Controls.Add(panelPaginacion, 0, 3);
+
 
             layout.Controls.Add(tablaPaciente, 0, 2);
             CargarPaciente();
@@ -563,7 +613,6 @@ namespace OpticaSistema
                 if (dni.Length != 8)
                 {
                     MessageBox.Show("Ingrese un DNI válido de 8 dígitos.");
-                    CargarPaciente();
                     return;
                 }
 
@@ -572,12 +621,28 @@ namespace OpticaSistema
                     try
                     {
                         cn.Open();
-                        string query = @"SELECT Dni, CONCAT(Nombres, ' ', Apellidos) AS NOMBRES
-                                 FROM PacienteBD
-                                 WHERE Dni = @dni";
+
+                        // 1. Contar total de registros
+                        string countQuery = @"SELECT COUNT(*) FROM PacienteBD WHERE Dni = @dni";
+                        SqlCommand countCmd = new SqlCommand(countQuery, cn);
+                        countCmd.Parameters.AddWithValue("@dni", dni);
+                        totalRecords = (int)countCmd.ExecuteScalar();
+                        totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                        // 2. Consulta principal con paginación
+                        string query = @"
+                SELECT Dni, CONCAT(Nombres, ' ', Apellidos) AS NOMBRES
+                FROM PacienteBD
+                WHERE Dni = @dni
+                ORDER BY NOMBRES
+                OFFSET (@PageNumber - 1) * @PageSize ROWS
+                FETCH NEXT @PageSize ROWS ONLY;";
 
                         SqlCommand cmd = new SqlCommand(query, cn);
                         cmd.Parameters.AddWithValue("@dni", dni);
+                        cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
+                        cmd.Parameters.AddWithValue("@PageSize", pageSize);
+
                         SqlDataAdapter da = new SqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         da.Fill(dt);
@@ -592,6 +657,7 @@ namespace OpticaSistema
                             );
                         }
 
+                        lblPagina.Text = $"Página {pageNumber} de {totalPages}";
 
                         if (dt.Rows.Count == 0)
                         {
@@ -603,10 +669,9 @@ namespace OpticaSistema
                     {
                         MessageBox.Show("Error al consultar la base de datos: " + ex.Message);
                     }
-
                 }
-
             };
+
         }
         private void BloquearControles()
         {
@@ -759,15 +824,31 @@ namespace OpticaSistema
                 try
                 {
                     cn.Open();
-                    string query = @"SELECT Dni, CONCAT(Nombres, ' ', Apellidos) AS NOMBRES FROM PacienteBD WHERE Estado = 1";
+
+                    // 1. Contar total de registros
+                    string countQuery = @"SELECT COUNT(*) FROM PacienteBD WHERE Estado = 1";
+                    SqlCommand countCmd = new SqlCommand(countQuery, cn);
+                    totalRecords = (int)countCmd.ExecuteScalar();
+                    totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                    // 2. Traer registros de la página actual
+                    string query = @"
+                SELECT Dni, CONCAT(Nombres, ' ', Apellidos) AS NOMBRES
+                FROM PacienteBD
+                WHERE Estado = 1
+                ORDER BY NOMBRES
+                OFFSET (@PageNumber - 1) * @PageSize ROWS
+                FETCH NEXT @PageSize ROWS ONLY;";
 
                     SqlCommand cmd = new SqlCommand(query, cn);
+                    cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
+                    cmd.Parameters.AddWithValue("@PageSize", pageSize);
+
                     SqlDataAdapter da = new SqlDataAdapter(cmd);
                     DataTable dt = new DataTable();
                     da.Fill(dt);
 
                     tablaPaciente.Rows.Clear();
-
                     foreach (DataRow row in dt.Rows)
                     {
                         string dni = row["Dni"].ToString();
@@ -775,15 +856,19 @@ namespace OpticaSistema
 
                         tablaPaciente.Rows.Add(dni, nombreCompleto);
                     }
+
+                    // 3. Actualizar label de estado
+                    lblPagina.Text = $"Página {pageNumber} de {totalPages}";
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error al cargar usuarios: " + ex.Message);
+                    MessageBox.Show("Error al cargar pacientes: " + ex.Message);
                 }
             }
         }
-    
-    private void AjustarPanelRegistro()
+
+
+        private void AjustarPanelRegistro()
         {
             if (panelRegistro != null)
             {
@@ -798,6 +883,23 @@ namespace OpticaSistema
             }
         }
 
-    }
 
+        private void btnAnterior_Click(object sender, EventArgs e)
+        {
+            if (pageNumber > 1)
+            {
+                pageNumber--;
+                CargarPaciente();
+            }
+        }
+
+        private void btnSiguiente_Click(object sender, EventArgs e)
+        {
+            if (pageNumber < totalPages)
+            {
+                pageNumber++;
+                CargarPaciente();
+            }
+        }
+    }
 }

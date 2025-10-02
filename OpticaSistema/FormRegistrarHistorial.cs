@@ -121,8 +121,8 @@ namespace OpticaSistema
             panelHorizontal.Padding = new Padding(10);
             panelHorizontal.Margin = new Padding(0, 10, 0, 10);
 
-            // --- SECCIÓN 1: DATOS BÁSICOS Y FECHA (Organizado en un sub-panel horizontal) ---
 
+            // --- SECCIÓN 1: DATOS BÁSICOS Y FECHA (Organizado en un sub-panel horizontal) ---
             FlowLayoutPanel panelDatosBasicos = new FlowLayoutPanel();
             panelDatosBasicos.FlowDirection = FlowDirection.LeftToRight;
             panelDatosBasicos.AutoSize = true;

@@ -20,8 +20,7 @@ namespace OpticaSistema
         private int totalRecords = 0; // Total de registros
         private int totalPages = 0;
 
-        private TableLayoutPanel layout;
-        private TableLayoutPanel panelFiltros;
+
         private TableLayoutPanel panelPaginacion;
 
         private ComboBox comboTipoBusqueda;
@@ -32,15 +31,12 @@ namespace OpticaSistema
         private Button btnActualizar;
         private Label lblEstado;
         private ComboBox comboEstado;
-        private Button btnAceptar;
-
+       
         private Button btnAnterior;
         private Label lblPagina;
         private Button btnSiguiente;
 
-        private Panel panelNavegacion;
-
-
+      
         public FormBuscarHistorial()
         {
             InitializeComponent();
@@ -49,6 +45,7 @@ namespace OpticaSistema
             conexionBD = new ConexionDB();
             this.BackColor = Color.White;
             MenuSuperiorBuilder.CrearMenuSuperiorAdaptable(this);
+
             // === CONTENEDOR PRINCIPAL ===
             TableLayoutPanel layout = new TableLayoutPanel();
             layout.Dock = DockStyle.Fill;
@@ -59,7 +56,6 @@ namespace OpticaSistema
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));        // Panel de filtros
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));    // 👈 Tabla expansible
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));        // Paginación
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));        // Botón REGISTRAR
             layout.Padding = new Padding(20);
             this.Controls.Add(layout);
 
@@ -274,7 +270,7 @@ namespace OpticaSistema
                 pageNumber = 1;
 
                 // Vuelve a listar todo
-                BuscarUsuarios();
+                CargarUsuarios();
             };
 
 
@@ -298,7 +294,7 @@ namespace OpticaSistema
                         if (result == DialogResult.Yes)
                         {
                             EliminarHistorial(dni);
-                            BuscarUsuarios(); // refresca la grilla
+                            CargarUsuarios(); // refresca la grilla
                         }
                     }
                 }
@@ -389,8 +385,6 @@ namespace OpticaSistema
                 // 3. Actualizar label de estado
                 lblPagina.Text = $"Página {pageNumber} de {totalPages}";
             }
-
-
 
         }
 
@@ -511,74 +505,7 @@ namespace OpticaSistema
             }
         }
 
-
-        private void InicializarPaginacionUI()
-        {
-            // Panel de navegación
-            panelNavegacion = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 40,
-                BackColor = Color.SteelBlue
-            };
-
-            // Botón Anterior
-            btnAnterior = new Button
-            {
-                Name = "btnAnterior",
-                Text = "Anterior",
-                Width = 100,
-                Left = 10,
-                Height = 35,
-                BackColor = Color.White,
-                ForeColor = Color.Black,
-                Top = 2
-            };
-            btnAnterior.Click += btnAnterior_Click;
-
-            // Label Página (declarado a nivel de clase)
-            lblPagina = new Label
-            {
-                Name = "lblPagina",
-                Text = "Página 0 de 0",
-                AutoSize = true,
-                Top = 12
-            };
-            // Centrado relativo dentro del panel
-            lblPagina.Left = (panelNavegacion.Width / 2) - 40;
-            lblPagina.Anchor = AnchorStyles.Top;
-
-            // Botón Siguiente
-            btnSiguiente = new Button
-            {
-                Name = "btnSiguiente",
-                Text = "Siguiente",
-                Width = 100,
-                Height = 35,
-                BackColor = Color.White,
-                ForeColor = Color.Black,
-                Top = 2
-            };
-            // Ubicación a la derecha
-            btnSiguiente.Left = panelNavegacion.Width - 110;
-            btnSiguiente.Anchor = AnchorStyles.Right;
-            btnSiguiente.Click += btnSiguiente_Click;
-
-            // Agregar controles al panel
-            panelNavegacion.Controls.Add(btnAnterior);
-            panelNavegacion.Controls.Add(lblPagina);
-            panelNavegacion.Controls.Add(btnSiguiente);
-
-            // Agregar panel al formulario
-            this.Controls.Add(panelNavegacion);
-
-            // Ajuste de reposicionamiento al cambiar tamaño
-            panelNavegacion.Resize += (s, e) =>
-            {
-                lblPagina.Left = (panelNavegacion.Width - lblPagina.Width) / 2;
-                btnSiguiente.Left = panelNavegacion.Width - btnSiguiente.Width - 10;
-            };
-        }
+              
         
 
     }
