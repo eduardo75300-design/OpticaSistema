@@ -200,18 +200,10 @@ namespace OpticaSistema
             panelRegistro.Padding = new Padding(20);
             panelRegistro.Visible = false;
             panelRegistro.Anchor = AnchorStyles.None;
+            panelRegistro.BorderStyle = BorderStyle.FixedSingle;
 
-            // Borde decorativo
-            panelRegistro.Paint += (s, e) =>
-            {
-                ControlPaint.DrawBorder(e.Graphics, panelRegistro.ClientRectangle,
-                    Color.LightGray, 2, ButtonBorderStyle.Solid,
-                    Color.LightGray, 2, ButtonBorderStyle.Solid,
-                    Color.LightGray, 2, ButtonBorderStyle.Solid,
-                    Color.LightGray, 2, ButtonBorderStyle.Solid);
-            };
 
-             // Fuente y tamaño de campos
+            // Fuente y tamaño de campos
             Font campoFont = new Font("Segoe UI", 11);
             Size campoSize = new Size(400, 45);
 
@@ -361,12 +353,13 @@ namespace OpticaSistema
             }
             // Contenedor de campos
             FlowLayoutPanel contenedor = new FlowLayoutPanel();
+            contenedor.Dock = DockStyle.None;
+            contenedor.Anchor = AnchorStyles.None;
+            contenedor.AutoSize = true;
+            contenedor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            contenedor.Margin = new Padding(0);
             contenedor.FlowDirection = FlowDirection.TopDown;
             contenedor.WrapContents = false;
-            contenedor.Dock = DockStyle.Fill;
-            contenedor.AutoScroll = true;
-            contenedor.WrapContents = false;
-            contenedor.Padding = new Padding(50, 0, 0, 0);
             contenedor.Controls.Add(CrearTitulo("Nombres"));
             contenedor.Controls.Add(txtNombre);
             contenedor.Controls.Add(CrearTitulo("Apellidos"));
@@ -392,41 +385,41 @@ namespace OpticaSistema
 
             // Contenedor de botones
             FlowLayoutPanel botones = new FlowLayoutPanel();
-            botones.Dock = DockStyle.Fill;
+            botones.FlowDirection = FlowDirection.LeftToRight;
+            botones.Dock = DockStyle.None;
             botones.Anchor = AnchorStyles.None;
-            botones.Padding = new Padding(0, 20, 0, 0);
-            botones.Margin = new Padding(0, 20, 0, 0);
-            botones.WrapContents = false;
             botones.AutoSize = true;
+            botones.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            botones.Margin = new Padding(0, 20, 0, 0);
             botones.Controls.Add(btnGuardar);
             botones.Controls.Add(btnCancelar);
 
             // Layout principal del panel
             TableLayoutPanel layoutRegistro = new TableLayoutPanel();
-            layoutRegistro.Dock = DockStyle.Fill;
             layoutRegistro.RowCount = 3;
-            layoutRegistro.ColumnCount = 3;
-
-            // Filas
+            layoutRegistro.ColumnCount = 1;
+            layoutRegistro.AutoSize = true;
+            layoutRegistro.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            layoutRegistro.Dock = DockStyle.Top;
+            layoutRegistro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layoutRegistro.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));   // Título
             layoutRegistro.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Campos
             layoutRegistro.RowStyles.Add(new RowStyle(SizeType.Absolute, 100)); // Botones
-
-            // Columnas (para centrar horizontalmente)
-            layoutRegistro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 0));  // izquierda
-            layoutRegistro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));  // centro
-            layoutRegistro.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 0));  // derecha
-
-            // Colocar controles
             layoutRegistro.Controls.Add(lblTituloRegistro, 0, 0);
-            layoutRegistro.SetColumnSpan(lblTituloRegistro, 3);
+            layoutRegistro.Controls.Add(contenedor, 0, 1);
+            layoutRegistro.Controls.Add(botones, 0, 2);
 
-            layoutRegistro.Controls.Add(contenedor, 1, 1); // 👈 ahora al centro
-            layoutRegistro.Controls.Add(botones, 1, 2);    // 👈 también centrados
+            // Centrado explícito de contenido en celdas
+            layoutRegistro.SetCellPosition(contenedor, new TableLayoutPanelCellPosition(0, 1));
+            layoutRegistro.Controls[1].Anchor = AnchorStyles.None;
+
+            layoutRegistro.SetCellPosition(botones, new TableLayoutPanelCellPosition(0, 2));
+            layoutRegistro.Controls[2].Anchor = AnchorStyles.None;
 
             // Agregar layout al panel
             panelRegistro.Controls.Clear();
             panelRegistro.Controls.Add(layoutRegistro);
+            panelRegistro.AutoScroll = true;
 
             // Agregar panel al formulario
             this.Controls.Add(panelRegistro);
