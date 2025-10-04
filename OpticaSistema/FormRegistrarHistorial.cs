@@ -47,13 +47,15 @@ namespace OpticaSistema
             titulo.Margin = new Padding(0, 30, 0, 0); // Más abajo
             layout.Controls.Add(titulo, 0, 0);
 
+            layout.RowStyles[1] = new RowStyle(SizeType.AutoSize);
             // FlowLayoutPanel para centrar búsqueda
             FlowLayoutPanel panelBusqueda = new FlowLayoutPanel();
             panelBusqueda.FlowDirection = FlowDirection.LeftToRight;
             panelBusqueda.WrapContents = false;
             panelBusqueda.AutoSize = true;
             panelBusqueda.Padding = new Padding(0, 10, 0, 10);
-            panelBusqueda.Anchor = AnchorStyles.Top;
+            panelBusqueda.Dock = DockStyle.None;
+            panelBusqueda.Anchor = AnchorStyles.None;
             panelBusqueda.Margin = new Padding(0, 10, 0, 10);
 
 
@@ -394,24 +396,47 @@ namespace OpticaSistema
             FlowLayoutPanel panelReceta = new FlowLayoutPanel();
             panelReceta.FlowDirection = FlowDirection.TopDown;
             panelReceta.AutoSize = true;
+            panelReceta.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             panelReceta.Margin = new Padding(10);
             panelReceta.Width = 820;
+
+            // --- Contenedor del título + checkbox ---
+            FlowLayoutPanel panelTitulo = new FlowLayoutPanel();
+            panelTitulo.FlowDirection = FlowDirection.LeftToRight;
+            panelTitulo.AutoSize = true;
+            panelTitulo.Dock = DockStyle.Top;
 
             // --- Título ---
             Label lblTitulo = new Label();
             lblTitulo.Text = "Diagnóstico";
             lblTitulo.Font = new Font("Segoe UI", 14, FontStyle.Bold);
             lblTitulo.AutoSize = false;
+            lblTitulo.Dock = DockStyle.Top;
+            lblTitulo.Height = panelReceta.Height / 2;
             lblTitulo.Width = panelReceta.Width;
             lblTitulo.TextAlign = ContentAlignment.MiddleCenter;
             lblTitulo.Margin = new Padding(0, 10, 0, 10);
+
+            CheckBox chkMostrar = new CheckBox();
+            chkMostrar.Text = "Mostrar Diagnóstico";
+            chkMostrar.Checked = true; // Por defecto visible
+            chkMostrar.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+            chkMostrar.AutoSize = true;
+            chkMostrar.Margin = new Padding(10, 13, 0, 0);
+
+            
+            
+            panelReceta.Controls.Add(chkMostrar);
             panelReceta.Controls.Add(lblTitulo);
+            panelReceta.Controls.Add(panelTitulo);
+
 
             // --- Contenedor con 2 columnas: tabla (izq) + textarea (der) ---
             TableLayoutPanel contenedor = new TableLayoutPanel();
             contenedor.ColumnCount = 2;
             contenedor.RowCount = 1;
             contenedor.AutoSize = true;
+            contenedor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             // Columnas con porcentaje: tabla 55%, textarea 45% -> ajustamos al 50%-50% para que textarea sea más ancho
             contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F)); // tabla 45%
             contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F)); // textarea 55%
@@ -520,7 +545,26 @@ namespace OpticaSistema
 
             // Agregar al panel principal
             panelReceta.Controls.Add(contenedor);
+            // --- Evento del CheckBox ---
+            chkMostrar.CheckedChanged += (s, e) =>
+            {
+                panelReceta.SuspendLayout();
 
+                if (chkMostrar.Checked)
+                {
+                    if (!panelReceta.Controls.Contains(lblTitulo))
+                        panelReceta.Controls.Add(lblTitulo);
+                    if (!panelReceta.Controls.Contains(contenedor))
+                        panelReceta.Controls.Add(contenedor);
+                }
+                else
+                {
+                    panelReceta.Controls.Remove(lblTitulo);
+                    panelReceta.Controls.Remove(contenedor);
+                }
+
+                panelReceta.ResumeLayout();
+            };
             return panelReceta;
         }
 
