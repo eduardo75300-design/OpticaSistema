@@ -423,9 +423,14 @@ namespace OpticaSistema
             chkMostrar.Font = new Font("Segoe UI", 10, FontStyle.Regular);
             chkMostrar.AutoSize = true;
             chkMostrar.Margin = new Padding(10, 13, 0, 0);
+            CheckBox chkFirma = new CheckBox();
+            chkFirma.Text = "Agregar Firma";
+            chkFirma.Checked = true; // Por defecto visible
+            chkFirma.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+            chkFirma.AutoSize = true;
+            chkFirma.Margin = new Padding(10, 13, 0, 0);
 
-            
-            
+            panelReceta.Controls.Add(chkFirma);
             panelReceta.Controls.Add(chkMostrar);
             panelReceta.Controls.Add(lblTitulo);
             panelReceta.Controls.Add(panelTitulo);
