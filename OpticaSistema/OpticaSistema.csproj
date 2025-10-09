@@ -9,7 +9,9 @@
 	<ItemGroup>
 	  <None Remove="Imagenes\borrar.png" />
 	  <None Remove="Imagenes\boton-editar.png" />
+	  <None Remove="Imagenes\derecho.png" />
 	  <None Remove="Imagenes\imagen-prueba.png" />
+	  <None Remove="Imagenes\izquierdo.png" />
 	  <None Remove="Imagenes\log.ico" />
 	  <None Remove="Imagenes\log.png" />
 	</ItemGroup>
@@ -18,6 +20,12 @@
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Imagenes\boton-editar.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Imagenes\izquierdo.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Imagenes\derecho.png">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
 	  <Content Include="Imagenes\log.ico">

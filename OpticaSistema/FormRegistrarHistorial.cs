@@ -193,13 +193,27 @@ namespace OpticaSistema
             Control lblMotivo = motivoLayout.Controls[0];
             lblMotivo.Text = "Motivo de Consulta:";
 
-            TextBox txtMotivo = new TextBox();
-            txtMotivo.Name = "txtMotivoConsulta";
-            txtMotivo.Dock = DockStyle.Fill;
-            txtMotivo.Font = new Font("Segoe UI", 12);
-            txtMotivo.Multiline = true; // Multilínea
-            txtMotivo.Height = 50;
-            motivoLayout.Controls.Add(txtMotivo, 0, 1);
+            // ComboBox en lugar de TextBox
+            ComboBox cmbMotivo = new ComboBox();
+            cmbMotivo.Name = "cmbMotivoConsulta";
+            cmbMotivo.Dock = DockStyle.Fill;
+            cmbMotivo.Font = new Font("Segoe UI", 12);
+            cmbMotivo.DropDownStyle = ComboBoxStyle.DropDownList;
+
+            // Opciones del selector (puedes modificarlas según tus necesidades)
+            cmbMotivo.Items.AddRange(new string[]
+            {
+                "Evaluación de la vista",
+                "Molestias oculares",
+                "Control rutinario",
+                "Cambio de lentes",
+                "Dolor o irritación ocular",
+                "Visión borrosa",
+                "Otro"
+            });
+
+            // Agregar al layout
+            motivoLayout.Controls.Add(cmbMotivo, 0, 1);
 
             panelHorizontal.Controls.Add(panelDatosBasicos);
             panelFechaMotivo.Controls.Add(fechaLayout);
@@ -209,7 +223,21 @@ namespace OpticaSistema
 
             // 3. Tabla de Correctores (Receta)
             panelHorizontal.Controls.Add(CrearPanelCorrectores());
-            
+
+            // === OBSERVACIONES ===
+            TableLayoutPanel observacionesLayout = CrearCampoLayout("Observaciones", 820, 120, false);
+            Control lblObservaciones = observacionesLayout.Controls[0];
+            lblObservaciones.Text = "OBSERVACIONES:";
+
+            TextBox txtObservaciones = new TextBox();
+            txtObservaciones.Name = "txtObservaciones";
+            txtObservaciones.Dock = DockStyle.Fill;
+            txtObservaciones.Font = new Font("Segoe UI", 12);
+            txtObservaciones.Multiline = true;
+            txtObservaciones.ScrollBars = ScrollBars.Vertical;
+            txtObservaciones.Height = 100;
+            observacionesLayout.Controls.Add(txtObservaciones, 0, 1);
+
 
             // === SIGNOS Y SÍNTOMAS ===
             TableLayoutPanel signosLayout = CrearCampoLayout("SignosSintomas", 820, 120, false);
@@ -226,9 +254,34 @@ namespace OpticaSistema
             signosLayout.Controls.Add(txtSignos, 0, 1);
 
             // === EXAMEN OFTALMOLÓGICO ===
-            TableLayoutPanel examenLayout = CrearCampoLayout("ExamenOftalmologico", 820, 120, false);
-            Control lblExamen = examenLayout.Controls[0];
+            FlowLayoutPanel panelExamenTitulo = new FlowLayoutPanel();
+            panelExamenTitulo.FlowDirection = FlowDirection.LeftToRight;
+            panelExamenTitulo.AutoSize = true;
+            panelExamenTitulo.Margin = new Padding(10, 10, 10, 0);
+            panelExamenTitulo.Width = 820;
+
+            Label lblExamen = new Label();
             lblExamen.Text = "EXAMEN OFTALMOLÓGICO:";
+            lblExamen.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            lblExamen.TextAlign = ContentAlignment.MiddleLeft;
+            lblExamen.AutoSize = true;
+
+            TextBox txtExamenTitulo = new TextBox();
+            txtExamenTitulo.Name = "txtDoctorExamenOftalmologico";
+            txtExamenTitulo.Width = 250;
+            txtExamenTitulo.Font = new Font("Segoe UI", 12);
+            txtExamenTitulo.Margin = new Padding(20, 0, 0, 0);
+
+            panelExamenTitulo.Controls.Add(lblExamen);
+            panelExamenTitulo.Controls.Add(txtExamenTitulo);
+
+            // Crear el área de texto grande (sin título dentro)
+            TableLayoutPanel examenLayout = new TableLayoutPanel();
+            examenLayout.Width = 820;
+            examenLayout.Height = 120;
+            examenLayout.ColumnCount = 1;
+            examenLayout.RowCount = 1;
+            examenLayout.Margin = new Padding(10, 0, 10, 0);
 
             TextBox txtExamen = new TextBox();
             txtExamen.Name = "txtExamenOftalmologico";
@@ -237,7 +290,23 @@ namespace OpticaSistema
             txtExamen.Multiline = true;
             txtExamen.ScrollBars = ScrollBars.Vertical;
             txtExamen.Height = 100;
-            examenLayout.Controls.Add(txtExamen, 0, 1);
+
+            examenLayout.Controls.Add(txtExamen, 0, 0);
+
+
+            // === PANEL DE DIBUJO DE OJOS ===
+            FlowLayoutPanel panelOjos = new FlowLayoutPanel();
+            panelOjos.FlowDirection = FlowDirection.LeftToRight;
+            panelOjos.Width = 820;
+            
+            panelOjos.AutoSize = true;
+            panelOjos.Margin = new Padding(10, 20, 10, 10);
+            panelOjos.WrapContents = false;
+
+            panelOjos.Controls.Add(CrearPanelDibujoOjo("Ojo Derecho"));
+            panelOjos.Controls.Add(CrearPanelDibujoOjo("Ojo Izquierdo"));
+
+            
 
             // === TRATAMIENTO ===
             TableLayoutPanel tratamientoLayout = CrearCampoLayout("Tratamiento", 820, 120, false);
@@ -253,8 +322,12 @@ namespace OpticaSistema
             txtTratamiento.Height = 100;
             tratamientoLayout.Controls.Add(txtTratamiento, 0, 1);
 
-            panelHorizontal.Controls.Add(signosLayout);
+            panelHorizontal.Controls.Add(observacionesLayout);
+            panelHorizontal.Controls.Add(panelExamenTitulo);
             panelHorizontal.Controls.Add(examenLayout);
+            
+            panelHorizontal.Controls.Add(signosLayout);
+            panelHorizontal.Controls.Add(panelOjos);
             panelHorizontal.Controls.Add(CrearPanelDiagnostico());
             panelHorizontal.Controls.Add(tratamientoLayout);
             // --- FIN NUEVOS CAMPOS ---
@@ -358,6 +431,126 @@ namespace OpticaSistema
             };
         }
 
+        private Control CrearPanelDibujoOjo(string titulo)
+        {
+            // --- Panel principal ---
+            FlowLayoutPanel panelOjo = new FlowLayoutPanel();
+            panelOjo.FlowDirection = FlowDirection.TopDown;
+            panelOjo.Width = 390;
+            panelOjo.AutoSize = true;
+            panelOjo.Margin = new Padding(10);
+
+            // --- Etiqueta ---
+            Label lblOjo = new Label();
+            lblOjo.Text = titulo;
+            lblOjo.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            lblOjo.TextAlign = ContentAlignment.MiddleCenter;
+            lblOjo.Dock = DockStyle.Top;
+            lblOjo.Width = 390;
+            panelOjo.Controls.Add(lblOjo);
+
+            // --- Imagen base ---
+            PictureBox picOjo = new PictureBox();
+            picOjo.Width = 360;
+            picOjo.Height = 240;
+            picOjo.BorderStyle = BorderStyle.FixedSingle;
+            picOjo.BackColor = Color.White;
+            picOjo.SizeMode = PictureBoxSizeMode.StretchImage;
+
+            string ruta = Path.Combine(Application.StartupPath, "Imagenes",
+                titulo.Contains("Derecho") ? "derecho.png" : "izquierdo.png");
+
+            Bitmap imagenBase;
+            if (File.Exists(ruta))
+                imagenBase = new Bitmap(Image.FromFile(ruta), picOjo.Size);
+            else
+            {
+                imagenBase = new Bitmap(picOjo.Width, picOjo.Height);
+                using (Graphics g = Graphics.FromImage(imagenBase))
+                {
+                    g.Clear(Color.White);
+                    g.DrawString("Imagen no encontrada",
+                        new Font("Segoe UI", 10, FontStyle.Italic),
+                        Brushes.Gray, new PointF(70, 110));
+                }
+            }
+
+            // --- Capa de dibujo ---
+            Bitmap capaDibujo = new Bitmap(picOjo.Width, picOjo.Height);
+            picOjo.Image = Combinar(imagenBase, capaDibujo);
+
+            // --- Variables de dibujo ---
+            bool dibujando = false;
+            Point puntoPrevio = Point.Empty;
+
+            picOjo.MouseDown += (s, e) =>
+            {
+                if (e.Button == MouseButtons.Left)
+                {
+                    dibujando = true;
+                    puntoPrevio = e.Location;
+                }
+            };
+
+            picOjo.MouseMove += (s, e) =>
+            {
+                if (dibujando)
+                {
+                    using (Graphics g = Graphics.FromImage(capaDibujo))
+                    {
+                        Pen lapiz = new Pen(Color.Red, 2);
+                        g.DrawLine(lapiz, puntoPrevio, e.Location);
+                    }
+
+                    picOjo.Image = Combinar(imagenBase, capaDibujo);
+                    puntoPrevio = e.Location;
+                }
+            };
+
+            picOjo.MouseUp += (s, e) => dibujando = false;
+
+            // --- Botón limpiar ---
+            Button btnLimpiar = new Button();
+            btnLimpiar.Text = "Limpiar dibujo";
+            btnLimpiar.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            btnLimpiar.Width = 160;
+            btnLimpiar.Height = 40;
+            btnLimpiar.Margin = new Padding(5);
+            btnLimpiar.BackColor = Color.LightSteelBlue;
+            btnLimpiar.FlatStyle = FlatStyle.Flat;
+            btnLimpiar.FlatAppearance.BorderSize = 1;
+
+            btnLimpiar.Click += (s, e) =>
+            {
+                capaDibujo = new Bitmap(picOjo.Width, picOjo.Height);
+                picOjo.Image = Combinar(imagenBase, capaDibujo);
+            };
+
+            // --- Panel botones ---
+            FlowLayoutPanel panelBotones = new FlowLayoutPanel();
+            panelBotones.FlowDirection = FlowDirection.LeftToRight;
+            panelBotones.AutoSize = true;
+            panelBotones.Margin = new Padding(0, 8, 0, 0);
+            panelBotones.Controls.Add(btnLimpiar);
+
+            panelOjo.Controls.Add(picOjo);
+            panelOjo.Controls.Add(panelBotones);
+
+            return panelOjo;
+        }
+
+        // --- Función auxiliar para combinar dos bitmaps ---
+        private Bitmap Combinar(Bitmap baseImg, Bitmap capa)
+        {
+            Bitmap resultado = new Bitmap(baseImg.Width, baseImg.Height);
+            using (Graphics g = Graphics.FromImage(resultado))
+            {
+                g.DrawImage(baseImg, 0, 0);
+                g.DrawImage(capa, 0, 0);
+            }
+            return resultado;
+        }
+
         // --- MÉTODOS AUXILIARES ---
 
         // Método para crear el layout estándar de Etiqueta + Control
@@ -400,22 +593,24 @@ namespace OpticaSistema
             panelReceta.Margin = new Padding(10);
             panelReceta.Width = 820;
 
-            // --- Contenedor del título + checkbox ---
-            FlowLayoutPanel panelTitulo = new FlowLayoutPanel();
-            panelTitulo.FlowDirection = FlowDirection.LeftToRight;
-            panelTitulo.AutoSize = true;
-            panelTitulo.Dock = DockStyle.Top;
+            // --- Título + campo ---
+            FlowLayoutPanel panelTituloTexto = new FlowLayoutPanel();
+            panelTituloTexto.FlowDirection = FlowDirection.LeftToRight;
+            panelTituloTexto.AutoSize = true;
+            panelTituloTexto.Margin = new Padding(0, 10, 10, 10);
+            panelTituloTexto.Width = 820;
 
-            // --- Título ---
             Label lblTitulo = new Label();
-            lblTitulo.Text = "Diagnóstico";
-            lblTitulo.Font = new Font("Segoe UI", 14, FontStyle.Bold);
-            lblTitulo.AutoSize = false;
-            lblTitulo.Dock = DockStyle.Top;
-            lblTitulo.Height = panelReceta.Height / 2;
-            lblTitulo.Width = panelReceta.Width;
-            lblTitulo.TextAlign = ContentAlignment.MiddleCenter;
-            lblTitulo.Margin = new Padding(0, 10, 0, 10);
+            lblTitulo.Text = "DIAGNÓSTICO:";
+            lblTitulo.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            lblTitulo.TextAlign = ContentAlignment.MiddleLeft;
+            lblTitulo.AutoSize = true;
+
+            TextBox txtDiagnosticoTitulo = new TextBox();
+            txtDiagnosticoTitulo.Name = "txtDoctorDiagnostico";
+            txtDiagnosticoTitulo.Width = 250;
+            txtDiagnosticoTitulo.Font = new Font("Segoe UI", 12);
+            txtDiagnosticoTitulo.Margin = new Padding(20, 0, 0, 0);
 
             CheckBox chkMostrar = new CheckBox();
             chkMostrar.Text = "Mostrar Diagnóstico";
@@ -423,17 +618,13 @@ namespace OpticaSistema
             chkMostrar.Font = new Font("Segoe UI", 10, FontStyle.Regular);
             chkMostrar.AutoSize = true;
             chkMostrar.Margin = new Padding(10, 13, 0, 0);
-            CheckBox chkFirma = new CheckBox();
-            chkFirma.Text = "Agregar Firma";
-            chkFirma.Checked = true; // Por defecto visible
-            chkFirma.Font = new Font("Segoe UI", 10, FontStyle.Regular);
-            chkFirma.AutoSize = true;
-            chkFirma.Margin = new Padding(10, 13, 0, 0);
 
-            panelReceta.Controls.Add(chkFirma);
+            // Añadir al subpanel
+            panelTituloTexto.Controls.Add(lblTitulo);
+            panelTituloTexto.Controls.Add(txtDiagnosticoTitulo);
+
             panelReceta.Controls.Add(chkMostrar);
-            panelReceta.Controls.Add(lblTitulo);
-            panelReceta.Controls.Add(panelTitulo);
+            panelReceta.Controls.Add(panelTituloTexto);
 
 
             // --- Contenedor con 2 columnas: tabla (izq) + textarea (der) ---
@@ -554,22 +745,50 @@ namespace OpticaSistema
             chkMostrar.CheckedChanged += (s, e) =>
             {
                 panelReceta.SuspendLayout();
+                contenedor.SuspendLayout();
 
                 if (chkMostrar.Checked)
                 {
-                    if (!panelReceta.Controls.Contains(lblTitulo))
-                        panelReceta.Controls.Add(lblTitulo);
-                    if (!panelReceta.Controls.Contains(contenedor))
-                        panelReceta.Controls.Add(contenedor);
+                    // --- Volver a mostrar la tabla ---
+                    contenedor.Controls.Clear();
+                    
+                    contenedor.ColumnStyles.Clear();
+                    contenedor.ColumnCount = 2;
+                    contenedor.RowCount = 1;
+                    contenedor.AutoSize = true;
+                    contenedor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F)); // tabla
+                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45f)); // textarea
+
+
+                    contenedor.Controls.Add(tablaDiagnostico, 0, 0);
+                    contenedor.Controls.Add(txtObservaciones, 1, 0);
+
+                    // Restaurar ancho automático del textarea
+                    txtObservaciones.Dock = DockStyle.Fill;
+                    txtObservaciones.Width = tablaDiagnostico.Width-90;
+                    txtObservaciones.Margin = new Padding(10, 0, 0, 0); // margen pequeño opcional
                 }
                 else
                 {
-                    panelReceta.Controls.Remove(lblTitulo);
-                    panelReceta.Controls.Remove(contenedor);
+                    // --- Ocultar la tabla y expandir el textarea ---
+                    contenedor.Controls.Clear();
+                    contenedor.ColumnCount = 1;
+                    contenedor.ColumnStyles.Clear();
+                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+                    contenedor.Controls.Add(txtObservaciones, 0, 0);
+
+                    // Asegurar que ocupe todo el ancho visible
+                    txtObservaciones.Dock = DockStyle.Fill;
+                    txtObservaciones.Margin = new Padding(0);
+                    txtObservaciones.Width = panelReceta.Width - 40; // compensar márgenes
                 }
 
+                contenedor.ResumeLayout();
                 panelReceta.ResumeLayout();
             };
+
             return panelReceta;
         }
 
@@ -583,10 +802,35 @@ namespace OpticaSistema
             FlowLayoutPanel panelReceta = new FlowLayoutPanel();
             panelReceta.FlowDirection = FlowDirection.TopDown;
             panelReceta.AutoSize = true;
-            panelReceta.Margin = new Padding(10);
+            panelReceta.Margin = new Padding(10, 10, 10, 0);
             panelReceta.Width = 820; // Ajustar ancho para la tabla
 
-            
+
+            // === Subpanel horizontal para "Optometro (a):" ===
+            FlowLayoutPanel panelOptometro = new FlowLayoutPanel();
+            panelOptometro.FlowDirection = FlowDirection.LeftToRight;
+            panelOptometro.AutoSize = true;
+            panelOptometro.Margin = new Padding(0, 0, 0, 5);
+            panelOptometro.Width = 820;
+            panelOptometro.WrapContents = false;
+
+            Label lblOptometro = new Label();
+            lblOptometro.Text = "OPTÓMETRO (A): ";
+            lblOptometro.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            lblOptometro.TextAlign = ContentAlignment.MiddleLeft;
+            lblOptometro.AutoSize = true;
+
+            TextBox txtOptometro = new TextBox();
+            txtOptometro.Name = "txtOptómetro";
+            txtOptometro.Width = 250;
+            txtOptometro.Font = new Font("Segoe UI", 12);
+            txtOptometro.Margin = new Padding(20, 0, 0, 0);
+            panelOptometro.Controls.Add(lblOptometro);
+            panelOptometro.Controls.Add(txtOptometro);
+
+            // Agregar el subpanel al principal
+            panelReceta.Controls.Add(panelOptometro);
+
 
             // TableLayoutPanel para la rejilla de datos
             TableLayoutPanel tablaCorrectores = new TableLayoutPanel();
