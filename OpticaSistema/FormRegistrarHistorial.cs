@@ -322,6 +322,53 @@ namespace OpticaSistema
             txtTratamiento.Height = 100;
             tratamientoLayout.Controls.Add(txtTratamiento, 0, 1);
 
+            // === SECCIÓN ADJUNTAR ANÁLISIS ===
+            FlowLayoutPanel panelAdjuntar = new FlowLayoutPanel();
+            panelAdjuntar.FlowDirection = FlowDirection.TopDown;
+            panelAdjuntar.AutoSize = true;
+            panelAdjuntar.Width = 820;
+            panelAdjuntar.Margin = new Padding(10, 10, 10, 20);
+
+            // Título
+            Label lblAdjuntar = new Label();
+            lblAdjuntar.Text = "ADJUNTAR ANÁLISIS:";
+            lblAdjuntar.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            lblAdjuntar.TextAlign = ContentAlignment.MiddleLeft;
+            lblAdjuntar.AutoSize = true;
+            lblAdjuntar.Margin = new Padding(0, 0, 0, 5);
+
+            // Botón para subir PDF
+            Button btnSubirPDF = new Button();
+            btnSubirPDF.Text = "Subir PDF";
+            btnSubirPDF.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            btnSubirPDF.Width = 160;
+            btnSubirPDF.Height = 40;
+            btnSubirPDF.BackColor = Color.SteelBlue;
+            btnSubirPDF.ForeColor = Color.White;
+            btnSubirPDF.FlatStyle = FlatStyle.Flat;
+            btnSubirPDF.FlatAppearance.BorderSize = 0;
+
+            // Evento para seleccionar el archivo
+            btnSubirPDF.Click += (s, e) =>
+            {
+                using (OpenFileDialog ofd = new OpenFileDialog())
+                {
+                    ofd.Filter = "Archivos PDF (*.pdf)|*.pdf";
+                    ofd.Title = "Seleccionar análisis en PDF";
+
+                    if (ofd.ShowDialog() == DialogResult.OK)
+                    {
+                        string rutaPDF = ofd.FileName;
+                        MessageBox.Show("Archivo seleccionado:\n" + rutaPDF, "Archivo cargado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // Aquí podrías guardar la ruta o subir el archivo a la BD si lo deseas
+                    }
+                }
+            };
+
+            // Agregar controles al panel
+            panelAdjuntar.Controls.Add(lblAdjuntar);
+            panelAdjuntar.Controls.Add(btnSubirPDF);
+
             panelHorizontal.Controls.Add(observacionesLayout);
             panelHorizontal.Controls.Add(panelExamenTitulo);
             panelHorizontal.Controls.Add(examenLayout);
@@ -330,6 +377,7 @@ namespace OpticaSistema
             panelHorizontal.Controls.Add(panelOjos);
             panelHorizontal.Controls.Add(CrearPanelDiagnostico());
             panelHorizontal.Controls.Add(tratamientoLayout);
+            panelHorizontal.Controls.Add(panelAdjuntar);
             // --- FIN NUEVOS CAMPOS ---
 
             // Agregar el panel horizontal en la columna central
