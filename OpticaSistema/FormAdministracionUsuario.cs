@@ -41,8 +41,9 @@ namespace OpticaSistema
                 { "Ingresar tipo de usuario", "" },
                 { "Administrador", "A" },
                 { "Admisión", "S" },
-                { "Optometria", "O" },
-                { "Medico", "M" }
+                { "Optómetra", "O" },
+                { "Oftalmólogo", "F" },
+                { "Retinólogo ","R" }
 
             };
 
@@ -502,12 +503,12 @@ namespace OpticaSistema
                     try
                     {
                         cn.Open();
-                        string dniIngresado = txtDni.Text.Trim();
+  
                         if (modoEdicion)
                         {
                             string verificarQuery = "SELECT COUNT(*) FROM UsuarioBD WHERE Dni = @dni AND Dni <> @dniActual";
                             SqlCommand verificarCmd = new SqlCommand(verificarQuery, cn);
-                            verificarCmd.Parameters.AddWithValue("@dni", dniIngresado);
+                            verificarCmd.Parameters.AddWithValue("@dni", txtDni.Text.Trim());
                             verificarCmd.Parameters.AddWithValue("@dniActual", dniEditando);
 
                             int existe = (int)verificarCmd.ExecuteScalar();

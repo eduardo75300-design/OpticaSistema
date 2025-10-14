@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,8 @@ namespace OpticaSistema
     {
         private ConexionDB conexionBD;
         private FlowLayoutPanel panelHorizontal;
-
+        TextBox txtBuscar = new TextBox();
+        ComboBox cmbMotivo = new ComboBox();
         public FormGenerarHistorial()
         {
             InitializeComponent();
@@ -55,7 +57,7 @@ namespace OpticaSistema
             panelBusqueda.AutoSize = true;
             panelBusqueda.Padding = new Padding(0, 10, 0, 10);
             panelBusqueda.Anchor = AnchorStyles.Top;
-            panelBusqueda.Margin = new Padding(0, 10, 0, 10);
+            panelBusqueda.Margin = new Padding(0, 10, 0, 0);
 
             // Label "DNI"
             Label lblBuscar = new Label();
@@ -68,7 +70,7 @@ namespace OpticaSistema
             lblBuscar.Margin = new Padding(10, 5, 5, 5);
 
             // TextBox de búsqueda
-            TextBox txtBuscar = new TextBox();
+            txtBuscar = new TextBox();
             txtBuscar.Name = "txtBuscar";
             txtBuscar.Font = new Font("Segoe UI", 12);
             txtBuscar.Width = 150;
@@ -84,7 +86,7 @@ namespace OpticaSistema
             btnBuscar.TextAlign = ContentAlignment.MiddleCenter;
             btnBuscar.Margin = new Padding(5, 5, 10, 5);
 
-            // Botón de búsqueda
+            // Botón de limpiar
             Button btnLimpiar = new Button();
             btnLimpiar.Text = "Limpiar";
             btnLimpiar.Font = new Font("Segoe UI", 12, FontStyle.Bold);
@@ -93,33 +95,92 @@ namespace OpticaSistema
             btnLimpiar.TextAlign = ContentAlignment.MiddleCenter;
             btnLimpiar.Margin = new Padding(5, 5, 10, 5);
 
-            // Agregar controles al panel
+            // Agregar controles al panel de búsqueda
             panelBusqueda.Controls.Add(lblBuscar);
             panelBusqueda.Controls.Add(txtBuscar);
             panelBusqueda.Controls.Add(btnBuscar);
             panelBusqueda.Controls.Add(btnLimpiar);
 
-            // Agregar al layout principal en la fila 1
-            layout.Controls.Add(panelBusqueda, 0, 1);
+            // Panel horizontal para motivo de consulta
+            FlowLayoutPanel panelMotivo = new FlowLayoutPanel();
+            panelMotivo.FlowDirection = FlowDirection.LeftToRight;
+            panelMotivo.WrapContents = false;
+            panelMotivo.AutoSize = true;
+            panelMotivo.Anchor = AnchorStyles.Top;
+            panelMotivo.Padding = new Padding(0);
+            panelMotivo.Margin = new Padding(0, 0, 0, 0);
+
+            // Label "Motivo de consulta"
+            Label lblMotivo = new Label();
+            lblMotivo.Text = "Motivo de consulta:";
+            lblMotivo.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            lblMotivo.TextAlign = ContentAlignment.MiddleCenter;
+            lblMotivo.AutoSize = false;
+            lblMotivo.Width = 200;
+            lblMotivo.Height = 40;
+            lblMotivo.Margin = new Padding(10, 5, 5, 5);
+
+            // ComboBox
+            cmbMotivo = new ComboBox();
+            cmbMotivo.Name = "cmbMotivo";
+            cmbMotivo.Font = new Font("Segoe UI", 12);
+            cmbMotivo.Width = 250;
+            cmbMotivo.Height = 40;
+            cmbMotivo.Margin = new Padding(5, 5, 5, 5);
+            cmbMotivo.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbMotivo.Items.AddRange(new string[]
+            {
+    "Exámen Ocular Completo",
+    "Medida de la Vista",
+    "Consulta Oftalmológica",
+    "Consulta con Retinólogo",
+                });
+            cmbMotivo.SelectedIndex = 0;
+
+            // Agregar controles al panel motivo
+            panelMotivo.Controls.Add(lblMotivo);
+            panelMotivo.Controls.Add(cmbMotivo);
+
+            // Panel contenedor vertical para búsqueda + motivo
+            TableLayoutPanel panelBusquedaMotivo = new TableLayoutPanel();
+            panelBusquedaMotivo.ColumnCount = 1;
+            panelBusquedaMotivo.RowCount = 2;
+            panelBusquedaMotivo.Dock = DockStyle.Top;
+            panelBusquedaMotivo.AutoSize = true;
+            panelBusquedaMotivo.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            panelBusquedaMotivo.Anchor = AnchorStyles.Top;
+            panelBusquedaMotivo.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Fila 0: DNI
+            panelBusquedaMotivo.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Fila 1: Motivo
+
+            // Agregar paneles al contenedor
+            panelBusquedaMotivo.Controls.Add(panelBusqueda, 0, 0);
+            panelBusquedaMotivo.Controls.Add(panelMotivo, 0, 1);
+
+            // Agregar el contenedor completo al layout principal en la fila 1
+            layout.RowStyles[1] = new RowStyle(SizeType.AutoSize); // ← Esto es clave
+            layout.Controls.Add(panelBusquedaMotivo, 0, 1);
+
 
 
             // Contenedor centrado con 3 columnas
             TableLayoutPanel contenedorCentral = new TableLayoutPanel();
             contenedorCentral.Dock = DockStyle.Fill;
-            contenedorCentral.ColumnCount = 3;
-            contenedorCentral.RowCount = 1;
-            contenedorCentral.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10)); // Izquierda
-            contenedorCentral.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 80)); // Centro
-            contenedorCentral.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10)); // Derecha
+            contenedorCentral.ColumnCount = 1;
+            contenedorCentral.ColumnStyles.Clear();
+            contenedorCentral.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
             // Panel horizontal dentro de columna central
             panelHorizontal = new FlowLayoutPanel();
-            panelHorizontal.Dock = DockStyle.Fill;
             panelHorizontal.FlowDirection = FlowDirection.LeftToRight;
             panelHorizontal.WrapContents = true;
             panelHorizontal.AutoScroll = true;
-            panelHorizontal.Padding = new Padding(10);
-            panelHorizontal.Margin = new Padding(0, 10, 0, 10);
+            panelHorizontal.AutoSize = true;
+            panelHorizontal.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            panelHorizontal.Dock = DockStyle.None; // ← importante
+            panelHorizontal.Anchor = AnchorStyles.Top;
+            panelHorizontal.Padding = new Padding(0);
+            panelHorizontal.Margin = new Padding(0, 0, 0, 10);
+
 
             // Campos de la BD
             string[] campos = new string[]
@@ -132,13 +193,13 @@ namespace OpticaSistema
             foreach (string campo in campos)
             {
                 TableLayoutPanel campoLayout = new TableLayoutPanel();
-                campoLayout.Width = 250;
+                campoLayout.Width = 200;
                 campoLayout.Height = 80;
                 campoLayout.ColumnCount = 1;
                 campoLayout.RowCount = 2;
                 campoLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
                 campoLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-                campoLayout.Margin = new Padding(10);
+                campoLayout.Margin = new Padding(5, 10, 5, 10);
 
                 Label lbl = new Label();
                 lbl.Text = campo + ":";
@@ -158,7 +219,7 @@ namespace OpticaSistema
             }
 
             // Agregar el panel horizontal en la columna central
-            contenedorCentral.Controls.Add(panelHorizontal, 1, 0);
+            contenedorCentral.Controls.Add(panelHorizontal, 0, 0);
 
             // Agregar al layout principal en la fila 2
             layout.Controls.Add(contenedorCentral, 0, 2);
@@ -256,6 +317,88 @@ namespace OpticaSistema
                     }
                 }
             };
+            btnRegistrar.Click += (s, e) =>
+            {
+                string dni = txtBuscar.Text.Trim();
+                string motivoConsulta = cmbMotivo.Text.Trim();
+
+                if (dni.Length != 8)
+                {
+                    MessageBox.Show("Ingrese un DNI válido de 8 dígitos.");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(motivoConsulta))
+                {
+                    MessageBox.Show("Seleccione un motivo de consulta.");
+                    return;
+                }
+
+                using (SqlConnection cn = conexionBD.Conectar())
+                {
+                    try
+                    {
+                        cn.Open();
+
+                        // 1. Validar que el DNI existe y obtener el IdPaciente
+                        string queryPaciente = @"SELECT Id FROM PacienteBD WHERE Dni = @dni AND Estado = 1";
+                        SqlCommand cmdPaciente = new SqlCommand(queryPaciente, cn);
+                        cmdPaciente.Parameters.AddWithValue("@dni", dni);
+
+                        object result = cmdPaciente.ExecuteScalar();
+
+                        if (result == null)
+                        {
+                            MessageBox.Show("No se encontró ningún paciente con ese DNI.");
+                            return;
+                        }
+
+                        int idPaciente = Convert.ToInt32(result);
+
+                        // 2. Insertar en HistorialClinicoBD
+                        string queryInsert = @"
+                INSERT INTO HistorialClinicoBD (
+    IdPaciente,
+    FechaConsulta,
+    MotivoConsulta,
+    EstadoHistorialTurno
+)
+VALUES (
+    @idPaciente,
+    @fechaConsulta,
+    @motivoConsulta,
+    @estadoHistorialTurno
+)
+";
+
+                        SqlCommand cmdInsert = new SqlCommand(queryInsert, cn);
+                        DateTime ahora = DateTime.Now;
+                        int estadoHistorialTurno = ahora.Hour < 12 ? 1 : 0;
+
+                        cmdInsert.Parameters.AddWithValue("@idPaciente", idPaciente);
+                        cmdInsert.Parameters.AddWithValue("@fechaConsulta", ahora);
+                        cmdInsert.Parameters.AddWithValue("@motivoConsulta", motivoConsulta);
+                        cmdInsert.Parameters.AddWithValue("@estadoHistorialTurno", estadoHistorialTurno);
+
+                        int filas = cmdInsert.ExecuteNonQuery();
+                        LimpiarCamposRegistro();
+
+                        if (filas > 0)
+                        {
+                            MessageBox.Show("Historial clínico registrado correctamente.");
+                        }
+                        else
+                        {
+                            MessageBox.Show("No se pudo registrar el historial clínico.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error al registrar: " + ex.Message);
+                    }
+                }
+
+            };
 
 
 
@@ -275,6 +418,7 @@ namespace OpticaSistema
 
         private void LimpiarCamposRegistro()
         {
+
             string[] campos = new string[]
             {
         "Apellidos", "Nombres", "Direccion", "Telefono", "Correo", "EstadoCivil",
@@ -290,6 +434,8 @@ namespace OpticaSistema
                     txt.Text = string.Empty;
                 }
             }
+            txtBuscar.Text = string.Empty;
+
         }
 
 

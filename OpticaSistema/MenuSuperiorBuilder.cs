@@ -55,26 +55,33 @@ namespace OpticaSistema
             formulario.Controls.Add(subMenuHistorial);
 
             // Lista de opciones permitidas según tipo de usuario
-            List<(string texto, Action accion)> opcionesHistorial = new List<(string, Action)>
-            {
-                ("REGISTRAR", () =>{
-                if (formulario is FormRegistrarHistorial) return;
-                FormRegistrarHistorial registrar = new FormRegistrarHistorial();
-                registrar.WindowState = FormWindowState.Maximized;
-                registrar.Show();
-                formulario.Hide();
-                }),
-                ("BUSCAR", () =>
-                {
-                    if (formulario is FormBuscarHistorial) return;
-                    FormBuscarHistorial buscar = new FormBuscarHistorial();
-                    buscar.WindowState = FormWindowState.Maximized;
-                    buscar.Show();
-                    formulario.Hide();
-                })
-            };
+            List<(string texto, Action accion)> opcionesHistorial = new List<(string, Action)>();
 
-            // Solo si el usuario es de tipo "S", agregar "GENERAR"
+            // Solo permitir "REGISTRAR" a usuarios tipo S o A
+            if (SesionUsuario.TipoUsuario == "S" || SesionUsuario.TipoUsuario == "A")
+            {
+                opcionesHistorial.Add(("REGISTRAR", () => {
+                    if (formulario is FormRegistrarHistorial) return;
+                    FormRegistrarHistorial registrar = new FormRegistrarHistorial();
+                    registrar.WindowState = FormWindowState.Maximized;
+                    registrar.Show();
+                    formulario.Hide();
+                }
+                ));
+            }
+
+            // "BUSCAR" disponible para todos
+            opcionesHistorial.Add(("REGISTRAR-EDITAR", () =>
+            {
+                if (formulario is FormBuscarHistorial) return;
+                FormBuscarHistorial buscar = new FormBuscarHistorial();
+                buscar.WindowState = FormWindowState.Maximized;
+                buscar.Show();
+                formulario.Hide();
+            }
+            ));
+
+            // "GENERAR" solo para S y A (ya estaba bien)
             if (SesionUsuario.TipoUsuario == "S" || SesionUsuario.TipoUsuario == "A")
             {
                 opcionesHistorial.Add(("GENERAR", () =>
@@ -87,6 +94,7 @@ namespace OpticaSistema
                 }
                 ));
             }
+
 
             // Crear dinámicamente los labels según opciones permitidas
             foreach (var (texto, accion) in opcionesHistorial)

@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -61,7 +62,7 @@ namespace OpticaSistema
 
             // === TÍTULO ===
             Label titulo = new Label();
-            titulo.Text = "BUSCAR HISTORIAL CLÍNICO";
+            titulo.Text = "HISTORIAL CLÍNICO";
             titulo.Font = new Font("Segoe UI", 24, FontStyle.Bold);
             titulo.ForeColor = Color.DarkBlue;
             titulo.Dock = DockStyle.Fill;
@@ -149,7 +150,7 @@ namespace OpticaSistema
 
             // ComboBox Estado
             comboEstado = new ComboBox();
-            comboEstado.Items.AddRange(new string[] { "", "Registrado", "Falta Registrar" });
+            comboEstado.Items.AddRange(new string[] { "", "MAÑANA", "TARDE" });
             comboEstado.SelectedIndex = 0;
             comboEstado.Font = new Font("Segoe UI", 11, FontStyle.Bold);
             comboEstado.Anchor = AnchorStyles.Left;
@@ -158,7 +159,7 @@ namespace OpticaSistema
             comboEstado.DropDownStyle = ComboBoxStyle.DropDownList;
             panelFiltros.Controls.Add(comboEstado, 3, 0);
 
-            
+
             // === TABLA DE USUARIOS ===
             tablaUsuarios = new DataGridView();
             tablaUsuarios.Dock = DockStyle.Fill;
@@ -180,10 +181,22 @@ namespace OpticaSistema
             tablaUsuarios.MultiSelect = false;
 
             // Columnas
+            tablaUsuarios.Columns.Add("Id", "ID");
+            tablaUsuarios.Columns["Id"].Visible = false;
             tablaUsuarios.Columns.Add("DNI", "DNI");
             tablaUsuarios.Columns.Add("NOMBRE", "NOMBRE");
             tablaUsuarios.Columns.Add("FECHA", "FECHA");
+            tablaUsuarios.Columns.Add("TURNO", "TURNO");
             tablaUsuarios.Columns.Add("ESTADO", "ESTADO");
+
+            DataGridViewButtonColumn colRegistrar = new DataGridViewButtonColumn();
+            colRegistrar.HeaderText = "REGISTRAR";
+            colRegistrar.Text = "📝"; // Ícono tipo lápiz y papel
+            colRegistrar.UseColumnTextForButtonValue = true;
+            colRegistrar.FlatStyle = FlatStyle.Flat;
+            colRegistrar.DefaultCellStyle.BackColor = Color.White;
+            colRegistrar.DefaultCellStyle.ForeColor = Color.Black;
+            tablaUsuarios.Columns.Add(colRegistrar);
 
             // Botón Editar
             DataGridViewButtonColumn colEditar = new DataGridViewButtonColumn();
@@ -194,6 +207,15 @@ namespace OpticaSistema
             colEditar.DefaultCellStyle.BackColor = Color.White;
             colEditar.DefaultCellStyle.ForeColor = Color.Black;
             tablaUsuarios.Columns.Add(colEditar);
+
+            DataGridViewButtonColumn colVer = new DataGridViewButtonColumn();
+            colVer.HeaderText = "VER";
+            colVer.Text = "👁️"; // Ícono visual tipo emoji
+            colVer.UseColumnTextForButtonValue = true;
+            colVer.FlatStyle = FlatStyle.Flat;
+            colVer.DefaultCellStyle.BackColor = Color.White;
+            colVer.DefaultCellStyle.ForeColor = Color.Black;
+            tablaUsuarios.Columns.Add(colVer);
 
             // Botón Eliminar
             DataGridViewButtonColumn colEliminar = new DataGridViewButtonColumn();
@@ -276,12 +298,13 @@ namespace OpticaSistema
 
             tablaUsuarios.CellContentClick += (s, e) =>
             {
+                
                 if (e.RowIndex < 0) return;
 
                 if (tablaUsuarios.Columns[e.ColumnIndex] is DataGridViewButtonColumn)
                 {
                     string dni = tablaUsuarios.Rows[e.RowIndex].Cells["DNI"].Value?.ToString();
-
+                    int idHistorial = Convert.ToInt32(tablaUsuarios.Rows[e.RowIndex].Cells["Id"].Value);
                     if (tablaUsuarios.Columns[e.ColumnIndex].HeaderText == "ELIMINAR")
                     {
                         DialogResult result = MessageBox.Show(
@@ -293,7 +316,7 @@ namespace OpticaSistema
 
                         if (result == DialogResult.Yes)
                         {
-                            EliminarHistorial(dni);
+                            EliminarHistorial(idHistorial);
                             CargarUsuarios(); // refresca la grilla
                         }
                     }
@@ -334,34 +357,36 @@ namespace OpticaSistema
 
         private void CargarUsuarios()
         {
-            using(SqlConnection cn = conexionBD.Conectar())
+            using (SqlConnection cn = conexionBD.Conectar())
             {
                 cn.Open();
 
                 // 1. Contar total de registros
                 string countQuery = @"
-            SELECT COUNT(*) 
-            FROM HistorialClinicoBD h
-            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-            WHERE h.Estado = 1";
+        SELECT COUNT(*) 
+        FROM HistorialClinicoBD h
+        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+        WHERE h.Estado = 1";
 
                 SqlCommand countCmd = new SqlCommand(countQuery, cn);
                 totalRecords = (int)countCmd.ExecuteScalar();
                 totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
 
-                // 2. Traer registros de la página actual
+                // 2. Traer registros de la página actual con estado de atención
                 string query = @"
-            SELECT 
-                p.Dni,
-                (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
-                h.FechaConsulta,
-                CASE WHEN h.EstadoHistorial = 1 THEN 'FALTA REGISTRAR' ELSE 'REGISTRADO' END AS Estado
-            FROM HistorialClinicoBD h
-            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-            WHERE h.Estado = 1
-            ORDER BY h.FechaConsulta DESC
-            OFFSET (@PageNumber - 1) * @PageSize ROWS
-            FETCH NEXT @PageSize ROWS ONLY;";
+        SELECT  
+            h.Id,
+            p.Dni,
+            (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
+            h.FechaConsulta,
+            CASE WHEN h.EstadoHistorialTurno = 1 THEN N'MAÑANA' ELSE N'TARDE' END AS EstadoTurno,
+            h.EstadoHistorial
+        FROM HistorialClinicoBD h
+        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+        WHERE h.Estado = 1
+        ORDER BY h.FechaConsulta DESC
+        OFFSET (@PageNumber - 1) * @PageSize ROWS
+        FETCH NEXT @PageSize ROWS ONLY;";
 
                 SqlCommand cmd = new SqlCommand(query, cn);
                 cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
@@ -374,19 +399,23 @@ namespace OpticaSistema
                 tablaUsuarios.Rows.Clear();
                 foreach (DataRow row in dt.Rows)
                 {
+                    string estadoAtencion = Convert.ToInt32(row["EstadoHistorial"]) == 1 ? "EN ESPERA" : "ATENDIDO";
+
                     tablaUsuarios.Rows.Add(
-                        row["Dni"].ToString(),
-                        row["NombreCompleto"].ToString(),
-                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy HH:mm"),
-                        row["Estado"].ToString()
+                        row["Id"].ToString(),                                 // ID (oculto si lo deseas)
+                        row["Dni"].ToString(),                                // DNI
+                        row["NombreCompleto"].ToString(),                     // NOMBRE
+                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy hh:mm:ss"), // FECHA
+                        row["EstadoTurno"].ToString(),                        // TURNO
+                        estadoAtencion                                        // ATENCIÓN
                     );
                 }
 
                 // 3. Actualizar label de estado
                 lblPagina.Text = $"Página {pageNumber} de {totalPages}";
             }
-
         }
+
 
         private void BuscarUsuarios()
         {
@@ -407,22 +436,22 @@ namespace OpticaSistema
                     where += " AND CAST(h.FechaConsulta AS DATE) = @Fecha";
                 }
 
-                // Filtro por estado
-                if (comboEstado.SelectedItem.ToString() == "Falta Registrar")
+                // Filtro por estado de turno
+                if (comboEstado.SelectedItem.ToString() == "MAÑANA")
                 {
-                    where += " AND h.EstadoHistorial = 1";
+                    where += " AND h.EstadoHistorialTurno = 1";
                 }
-                else if (comboEstado.SelectedItem.ToString() == "Registrado")
+                else if (comboEstado.SelectedItem.ToString() == "TARDE")
                 {
-                    where += " AND h.EstadoHistorial = 0";
+                    where += " AND h.EstadoHistorialTurno = 0";
                 }
 
                 // === Contar total de registros ===
                 string countQuery = $@"
-            SELECT COUNT(*) 
-            FROM HistorialClinicoBD h
-            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-            {where}";
+        SELECT COUNT(*) 
+        FROM HistorialClinicoBD h
+        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+        {where}";
 
                 SqlCommand countCmd = new SqlCommand(countQuery, cn);
 
@@ -437,17 +466,19 @@ namespace OpticaSistema
 
                 // === Consulta principal con paginación ===
                 string query = $@"
-            SELECT 
-                p.Dni,
-                (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
-                h.FechaConsulta,
-                CASE WHEN h.EstadoHistorial = 1 THEN 'FALTA REGISTRAR' ELSE 'REGISTRADO' END AS Estado
-            FROM HistorialClinicoBD h
-            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-            {where}
-            ORDER BY h.FechaConsulta DESC
-            OFFSET (@PageNumber - 1) * @PageSize ROWS
-            FETCH NEXT @PageSize ROWS ONLY;";
+        SELECT  
+            h.Id,
+            p.Dni,
+            (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
+            h.FechaConsulta,
+            CASE WHEN h.EstadoHistorialTurno = 1 THEN N'MAÑANA' ELSE N'TARDE' END AS EstadoTurno,
+            h.EstadoHistorial
+        FROM HistorialClinicoBD h
+        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+        {where}
+        ORDER BY h.FechaConsulta DESC
+        OFFSET (@PageNumber - 1) * @PageSize ROWS
+        FETCH NEXT @PageSize ROWS ONLY;";
 
                 SqlCommand cmd = new SqlCommand(query, cn);
                 cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
@@ -467,11 +498,15 @@ namespace OpticaSistema
                 tablaUsuarios.Rows.Clear();
                 foreach (DataRow row in dt.Rows)
                 {
+                    string estadoAtencion = Convert.ToInt32(row["EstadoHistorial"]) == 1 ? "EN ESPERA" : "ATENDIDO";
+
                     tablaUsuarios.Rows.Add(
-                        row["Dni"].ToString(),
-                        row["NombreCompleto"].ToString(),
-                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy HH:mm"),
-                        row["Estado"].ToString()
+                        row["Id"].ToString(),                                 // ID (oculto si lo deseas)
+                        row["Dni"].ToString(),                                // DNI
+                        row["NombreCompleto"].ToString(),                     // NOMBRE
+                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy hh:mm:ss"), // FECHA
+                        row["EstadoTurno"].ToString(),                        // TURNO
+                        estadoAtencion                                        // ATENCIÓN
                     );
                 }
 
@@ -479,22 +514,17 @@ namespace OpticaSistema
             }
         }
 
-        private void EliminarHistorial(string dni)
+        private void EliminarHistorial(int idHistorial)
         {
             using (SqlConnection cn = conexionBD.Conectar())
             {
                 cn.Open();
 
-                string query = @"
-            UPDATE h
-            SET h.Estado = 0
-            FROM HistorialClinicoBD h
-            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-            WHERE p.Dni = @Dni";
+                string query = @"UPDATE HistorialClinicoBD SET Estado = 0 WHERE Id = @Id";
 
                 using (SqlCommand cmd = new SqlCommand(query, cn))
                 {
-                    cmd.Parameters.AddWithValue("@Dni", dni);
+                    cmd.Parameters.AddWithValue("@Id", idHistorial);
                     int rows = cmd.ExecuteNonQuery();
 
                     if (rows > 0)
@@ -505,8 +535,9 @@ namespace OpticaSistema
             }
         }
 
-              
-        
+
+
+
 
     }
 }
