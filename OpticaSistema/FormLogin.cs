@@ -10,6 +10,7 @@ namespace OpticaSistema
         public static class SesionUsuario
         {
             public static string Nombre { get; set; }
+            public static string NombreCompleto { get; set; }
             public static string TipoUsuario { get; set; }
 
         }
@@ -218,22 +219,23 @@ namespace OpticaSistema
 
         private void CargarDatosUsuario(string dni)
         {
-            string nombre = "";
-            string tipoUsuario = "";
-
             using (SqlConnection con = conexionBD.Conectar())
             {
                 try
                 {
                     con.Open();
-                    string query = "SELECT Nombres, TipoUsuario FROM UsuarioBD WHERE Dni = @Dni";
+                    string query = "SELECT Apellidos, Nombres, TipoUsuario FROM UsuarioBD WHERE Dni = @Dni";
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
                         cmd.Parameters.AddWithValue("@Dni", dni);
                         SqlDataReader reader = cmd.ExecuteReader();
                         if (reader.Read())
                         {
-                            SesionUsuario.Nombre = reader["Nombres"].ToString();
+                            string nombres = reader["Nombres"].ToString();
+                            string apellidos = reader["Apellidos"].ToString();
+
+                            SesionUsuario.Nombre = nombres;
+                            SesionUsuario.NombreCompleto = $"{nombres} {apellidos}".Trim();
                             SesionUsuario.TipoUsuario = reader["TipoUsuario"].ToString();
                         }
                     }
@@ -242,10 +244,9 @@ namespace OpticaSistema
                 {
                     MessageBox.Show("Error al obtener datos del usuario: " + ex.Message);
                 }
-
             }
-
         }
+
 
 
         public static class Sesion

@@ -9,6 +9,7 @@ using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static OpticaSistema.FormLogin;
 
 namespace OpticaSistema
 {
@@ -37,7 +38,8 @@ namespace OpticaSistema
         private Label lblPagina;
         private Button btnSiguiente;
 
-      
+
+
         public FormBuscarHistorial()
         {
             InitializeComponent();
@@ -46,6 +48,7 @@ namespace OpticaSistema
             conexionBD = new ConexionDB();
             this.BackColor = Color.White;
             MenuSuperiorBuilder.CrearMenuSuperiorAdaptable(this);
+
 
             // === CONTENEDOR PRINCIPAL ===
             TableLayoutPanel layout = new TableLayoutPanel();
@@ -101,7 +104,7 @@ namespace OpticaSistema
             // Panel dinámico para entrada
             Panel panelEntrada = new Panel();
             panelEntrada.Dock = DockStyle.Fill;
-            txtDni = new TextBox { Font = new Font("Segoe UI", 11), Dock = DockStyle.Fill, Height = 40};
+            txtDni = new TextBox { Font = new Font("Segoe UI", 11), Dock = DockStyle.Fill, Height = 40 };
             dtpFecha = new DateTimePicker { Font = new Font("Segoe UI", 11), Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, Visible = false, Height = 40 };
             panelEntrada.Margin = new Padding(0, 8, 0, 0);
             panelEntrada.Controls.Add(txtDni);
@@ -188,8 +191,11 @@ namespace OpticaSistema
             tablaUsuarios.Columns.Add("FECHA", "FECHA");
             tablaUsuarios.Columns.Add("TURNO", "TURNO");
             tablaUsuarios.Columns.Add("ESTADO", "ESTADO");
+            tablaUsuarios.Columns.Add("MotivoConsulta", "MOTIVO");
+            tablaUsuarios.Columns["MotivoConsulta"].Visible = false;
 
             DataGridViewButtonColumn colRegistrar = new DataGridViewButtonColumn();
+            colRegistrar.Name = "REGISTRAR";
             colRegistrar.HeaderText = "REGISTRAR";
             colRegistrar.Text = "📝"; // Ícono tipo lápiz y papel
             colRegistrar.UseColumnTextForButtonValue = true;
@@ -201,6 +207,7 @@ namespace OpticaSistema
             // Botón Editar
             DataGridViewButtonColumn colEditar = new DataGridViewButtonColumn();
             colEditar.HeaderText = "EDITAR";
+            colEditar.Name = "EDITAR";
             colEditar.Text = "✏️"; // Puedes usar texto o dejarlo vacío
             colEditar.UseColumnTextForButtonValue = true;
             colEditar.FlatStyle = FlatStyle.Flat;
@@ -295,17 +302,65 @@ namespace OpticaSistema
                 CargarUsuarios();
             };
 
-
             tablaUsuarios.CellContentClick += (s, e) =>
             {
-                
                 if (e.RowIndex < 0) return;
 
                 if (tablaUsuarios.Columns[e.ColumnIndex] is DataGridViewButtonColumn)
                 {
+                    string motivoConsulta = tablaUsuarios.Rows[e.RowIndex].Cells["MotivoConsulta"].Value?.ToString();
                     string dni = tablaUsuarios.Rows[e.RowIndex].Cells["DNI"].Value?.ToString();
+                    string tipoUsuario = SesionUsuario.TipoUsuario;
                     int idHistorial = Convert.ToInt32(tablaUsuarios.Rows[e.RowIndex].Cells["Id"].Value);
-                    if (tablaUsuarios.Columns[e.ColumnIndex].HeaderText == "ELIMINAR")
+
+                    // 👇 Obtenemos el estado de la fila
+                    string estado = tablaUsuarios.Rows[e.RowIndex].Cells["ESTADO"].Value?.ToString();
+                    string header = tablaUsuarios.Columns[e.ColumnIndex].HeaderText;
+
+                    // === REGISTRAR ===
+                    if (header == "REGISTRAR")
+                    {
+                        // Bloquear si ya está atendido
+                        if (estado == "ATENDIDO")
+                        {
+                            MessageBox.Show("Este historial ya fue registrado y no puede volver a registrarse.",
+                                "Registro bloqueado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+
+                        // Validar permisos
+                        if (tipoUsuario == "S" || !TieneAcceso(tipoUsuario, motivoConsulta))
+                        {
+                            MessageBox.Show("No tienes permisos para registrar este historial.", "Acceso denegado",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                            
+                        }
+
+                        FormRegistrarH form = new FormRegistrarH(idHistorial);
+                        form.ShowDialog();
+                        CargarUsuarios();
+                        return;
+                    }
+
+                    // === EDITAR (lo dejamos como estaba) ===
+                    if (header == "EDITAR")
+                    {
+                        if (tipoUsuario != "S" && !TieneAcceso(tipoUsuario, motivoConsulta))
+                        {
+                            MessageBox.Show("No tienes permisos para editar este historial.", "Acceso denegado",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+
+                        FormEditarH form = new FormEditarH(idHistorial);
+                        form.ShowDialog();
+                        CargarUsuarios();
+                        return;
+                    }
+
+                    // === ELIMINAR ===
+                    if (header == "ELIMINAR")
                     {
                         DialogResult result = MessageBox.Show(
                             $"¿Seguro que deseas eliminar el historial del paciente con DNI {dni}?",
@@ -317,16 +372,17 @@ namespace OpticaSistema
                         if (result == DialogResult.Yes)
                         {
                             EliminarHistorial(idHistorial);
-                            CargarUsuarios(); // refresca la grilla
+                            CargarUsuarios();
                         }
+                    }
+                    else if (header == "VER")
+                    {
+                        // Acción VER si aplica
                     }
                 }
             };
-
-
-
-
         }
+
         private void btnAnterior_Click(object sender, EventArgs e)
         {
             if (pageNumber > 1)
@@ -363,10 +419,10 @@ namespace OpticaSistema
 
                 // 1. Contar total de registros
                 string countQuery = @"
-        SELECT COUNT(*) 
-        FROM HistorialClinicoBD h
-        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-        WHERE h.Estado = 1";
+            SELECT COUNT(*) 
+            FROM HistorialClinicoBD h
+            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+            WHERE h.Estado = 1";
 
                 SqlCommand countCmd = new SqlCommand(countQuery, cn);
                 totalRecords = (int)countCmd.ExecuteScalar();
@@ -374,19 +430,20 @@ namespace OpticaSistema
 
                 // 2. Traer registros de la página actual con estado de atención
                 string query = @"
-        SELECT  
-            h.Id,
-            p.Dni,
-            (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
-            h.FechaConsulta,
-            CASE WHEN h.EstadoHistorialTurno = 1 THEN N'MAÑANA' ELSE N'TARDE' END AS EstadoTurno,
-            h.EstadoHistorial
-        FROM HistorialClinicoBD h
-        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-        WHERE h.Estado = 1
-        ORDER BY h.FechaConsulta DESC
-        OFFSET (@PageNumber - 1) * @PageSize ROWS
-        FETCH NEXT @PageSize ROWS ONLY;";
+            SELECT  
+                h.Id,
+                p.Dni,
+                (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
+                h.FechaConsulta,
+                CASE WHEN h.EstadoHistorialTurno = 1 THEN N'MAÑANA' ELSE N'TARDE' END AS EstadoTurno,
+                h.MotivoConsulta,
+                h.EstadoHistorial
+            FROM HistorialClinicoBD h
+            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+            WHERE h.Estado = 1
+            ORDER BY h.FechaConsulta DESC
+            OFFSET (@PageNumber - 1) * @PageSize ROWS
+            FETCH NEXT @PageSize ROWS ONLY;";
 
                 SqlCommand cmd = new SqlCommand(query, cn);
                 cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
@@ -400,15 +457,48 @@ namespace OpticaSistema
                 foreach (DataRow row in dt.Rows)
                 {
                     string estadoAtencion = Convert.ToInt32(row["EstadoHistorial"]) == 1 ? "EN ESPERA" : "ATENDIDO";
+                    string motivoConsulta = row["MotivoConsulta"].ToString();
+                    string tipoUsuario = SesionUsuario.TipoUsuario; // cargado previamente
 
                     tablaUsuarios.Rows.Add(
-                        row["Id"].ToString(),                                 // ID (oculto si lo deseas)
+                        row["Id"].ToString(),                                 // ID
                         row["Dni"].ToString(),                                // DNI
                         row["NombreCompleto"].ToString(),                     // NOMBRE
-                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy hh:mm:ss"), // FECHA
+                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy hh:mm:ss"), // FECHA (24h)
                         row["EstadoTurno"].ToString(),                        // TURNO
-                        estadoAtencion                                        // ATENCIÓN
+                        estadoAtencion,                                       // ATENCIÓN
+                        motivoConsulta                                        // MOTIVO
                     );
+                    // Obtener la última fila agregada
+                    int rowIndex = tablaUsuarios.Rows.Count - 1;
+                    DataGridViewRow fila = tablaUsuarios.Rows[rowIndex];
+
+                    // === ESTADO visual ===
+                    DataGridViewCell celdaEstado = fila.Cells["ESTADO"];
+                    celdaEstado.Style.ForeColor = (estadoAtencion == "EN ESPERA") ? Color.Red : Color.Green;
+                    celdaEstado.Style.Font = new Font(tablaUsuarios.Font, FontStyle.Bold);
+
+                    // === Validación de acceso considerando estado ===
+                    bool enEspera = (estadoAtencion == "EN ESPERA");
+
+                    // Solo se puede REGISTRAR si está en espera y el usuario tiene acceso
+                    bool puedeRegistrar = enEspera && (tipoUsuario != "S") && TieneAcceso(tipoUsuario, motivoConsulta);
+
+                    // EDITAR se mantiene como estaba:
+                    // - está en espera y tiene acceso, o
+                    // - es superusuario (S), incluso si ya está atendido
+                    bool puedeEditar = TieneAcceso(tipoUsuario, motivoConsulta) || (tipoUsuario == "S");
+
+                    // === REGISTRAR ===
+                    DataGridViewCell celdaRegistrar = fila.Cells["REGISTRAR"];
+                    celdaRegistrar.ReadOnly = !puedeRegistrar;
+                    celdaRegistrar.Style.ForeColor = puedeRegistrar ? Color.Black : Color.Gray;
+
+                    // === EDITAR ===
+                    DataGridViewCell celdaEditar = fila.Cells["EDITAR"];
+                    celdaEditar.ReadOnly = !puedeEditar;
+                    celdaEditar.Style.ForeColor = puedeEditar ? Color.Black : Color.Gray;
+
                 }
 
                 // 3. Actualizar label de estado
@@ -427,31 +517,31 @@ namespace OpticaSistema
                 string where = "WHERE h.Estado = 1"; // base
 
                 // Filtro por tipo de búsqueda
-                if (comboTipoBusqueda.SelectedItem.ToString() == "DNI" && !string.IsNullOrWhiteSpace(txtDni.Text))
+                if (comboTipoBusqueda.SelectedItem != null && comboTipoBusqueda.SelectedItem.ToString() == "DNI" && !string.IsNullOrWhiteSpace(txtDni.Text))
                 {
                     where += " AND p.Dni LIKE @Dni";
                 }
-                else if (comboTipoBusqueda.SelectedItem.ToString() == "Fecha")
+                else if (comboTipoBusqueda.SelectedItem != null && comboTipoBusqueda.SelectedItem.ToString() == "Fecha")
                 {
                     where += " AND CAST(h.FechaConsulta AS DATE) = @Fecha";
                 }
 
                 // Filtro por estado de turno
-                if (comboEstado.SelectedItem.ToString() == "MAÑANA")
+                if (comboEstado.SelectedItem != null && comboEstado.SelectedItem.ToString() == "MAÑANA")
                 {
                     where += " AND h.EstadoHistorialTurno = 1";
                 }
-                else if (comboEstado.SelectedItem.ToString() == "TARDE")
+                else if (comboEstado.SelectedItem != null && comboEstado.SelectedItem.ToString() == "TARDE")
                 {
                     where += " AND h.EstadoHistorialTurno = 0";
                 }
 
                 // === Contar total de registros ===
                 string countQuery = $@"
-        SELECT COUNT(*) 
-        FROM HistorialClinicoBD h
-        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-        {where}";
+            SELECT COUNT(*) 
+            FROM HistorialClinicoBD h
+            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+            {where}";
 
                 SqlCommand countCmd = new SqlCommand(countQuery, cn);
 
@@ -466,19 +556,20 @@ namespace OpticaSistema
 
                 // === Consulta principal con paginación ===
                 string query = $@"
-        SELECT  
-            h.Id,
-            p.Dni,
-            (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
-            h.FechaConsulta,
-            CASE WHEN h.EstadoHistorialTurno = 1 THEN N'MAÑANA' ELSE N'TARDE' END AS EstadoTurno,
-            h.EstadoHistorial
-        FROM HistorialClinicoBD h
-        INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
-        {where}
-        ORDER BY h.FechaConsulta DESC
-        OFFSET (@PageNumber - 1) * @PageSize ROWS
-        FETCH NEXT @PageSize ROWS ONLY;";
+            SELECT  
+                h.Id,
+                p.Dni,
+                (p.Nombres + ' ' + p.Apellidos) AS NombreCompleto,
+                h.FechaConsulta,
+                CASE WHEN h.EstadoHistorialTurno = 1 THEN N'MAÑANA' ELSE N'TARDE' END AS EstadoTurno,
+                h.MotivoConsulta,
+                h.EstadoHistorial
+            FROM HistorialClinicoBD h
+            INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+            {where}
+            ORDER BY h.FechaConsulta DESC
+            OFFSET (@PageNumber - 1) * @PageSize ROWS
+            FETCH NEXT @PageSize ROWS ONLY;";
 
                 SqlCommand cmd = new SqlCommand(query, cn);
                 cmd.Parameters.AddWithValue("@PageNumber", pageNumber);
@@ -499,21 +590,53 @@ namespace OpticaSistema
                 foreach (DataRow row in dt.Rows)
                 {
                     string estadoAtencion = Convert.ToInt32(row["EstadoHistorial"]) == 1 ? "EN ESPERA" : "ATENDIDO";
+                    string motivoConsulta = row["MotivoConsulta"].ToString();
+                    string tipoUsuario = SesionUsuario.TipoUsuario; // cargado previamente
 
                     tablaUsuarios.Rows.Add(
-                        row["Id"].ToString(),                                 // ID (oculto si lo deseas)
+                        row["Id"].ToString(),                                 // ID
                         row["Dni"].ToString(),                                // DNI
                         row["NombreCompleto"].ToString(),                     // NOMBRE
-                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy hh:mm:ss"), // FECHA
+                        Convert.ToDateTime(row["FechaConsulta"]).ToString("dd/MM/yyyy hh:mm:ss"), // FECHA (24h)
                         row["EstadoTurno"].ToString(),                        // TURNO
-                        estadoAtencion                                        // ATENCIÓN
+                        estadoAtencion,                                       // ATENCIÓN
+                        row["MotivoConsulta"].ToString()
                     );
+
+                    // Obtener la última fila agregada
+                    int rowIndex = tablaUsuarios.Rows.Count - 1;
+                    DataGridViewRow fila = tablaUsuarios.Rows[rowIndex];
+
+                    // === ESTADO visual ===
+                    DataGridViewCell celdaEstado = fila.Cells["ESTADO"];
+                    celdaEstado.Style.ForeColor = (estadoAtencion == "EN ESPERA") ? Color.Red : Color.Green;
+                    celdaEstado.Style.Font = new Font(tablaUsuarios.Font, FontStyle.Bold);
+
+                    // === Validación de acceso considerando estado ===
+                    bool enEspera = (estadoAtencion == "EN ESPERA");
+
+                    // Solo se puede REGISTRAR si está en espera y el usuario tiene acceso
+                    bool puedeRegistrar = enEspera && (tipoUsuario != "S") && TieneAcceso(tipoUsuario, motivoConsulta);
+
+                    // EDITAR se mantiene como estaba:
+                    // - está en espera y tiene acceso, o
+                    // - es superusuario (S), incluso si ya está atendido
+                    bool puedeEditar = TieneAcceso(tipoUsuario, motivoConsulta) || (tipoUsuario == "S");
+
+                    // === REGISTRAR ===
+                    DataGridViewCell celdaRegistrar = fila.Cells["REGISTRAR"];
+                    celdaRegistrar.ReadOnly = !puedeRegistrar;
+                    celdaRegistrar.Style.ForeColor = puedeRegistrar ? Color.Black : Color.Gray;
+
+                    // === EDITAR ===
+                    DataGridViewCell celdaEditar = fila.Cells["EDITAR"];
+                    celdaEditar.ReadOnly = !puedeEditar;
+                    celdaEditar.Style.ForeColor = puedeEditar ? Color.Black : Color.Gray;
                 }
 
                 lblPagina.Text = $"Página {pageNumber} de {totalPages}";
             }
         }
-
         private void EliminarHistorial(int idHistorial)
         {
             using (SqlConnection cn = conexionBD.Conectar())
@@ -534,6 +657,33 @@ namespace OpticaSistema
                 }
             }
         }
+
+        private bool TieneAcceso(string tipoUsuario, string motivoConsulta)
+        {
+            if (string.IsNullOrWhiteSpace(motivoConsulta))
+                return false;
+
+            motivoConsulta = motivoConsulta.Trim().ToLower();
+
+            switch (motivoConsulta)
+            {
+                case "exámen ocular completo":
+                    return true; // todos pueden
+                case "medida de la vista":
+                    return tipoUsuario == "O" || tipoUsuario == "A";
+                case "consulta oftalmológica":
+                    return tipoUsuario == "F" || tipoUsuario == "A";
+                case "consulta con retinólogo":
+                    return tipoUsuario == "R" || tipoUsuario == "A";
+                default:
+                    return tipoUsuario == "A";
+            }
+        }
+
+
+
+
+
 
 
 

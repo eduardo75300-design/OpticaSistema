@@ -8,30 +8,90 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static OpticaSistema.FormLogin;
 
 namespace OpticaSistema
 {
-    public partial class FormRegistrarHistorial : Form
+    public partial class FormEditarH : Form
     {
         private ConexionDB conexionBD;
         private FlowLayoutPanel panelHorizontal;
-        byte[] archivoPDF = null;
+        private byte[] archivoPDF = null;
+        private string nombreArchivo = null;
+        private TableLayoutPanel tablaDiagnostico;
 
-        public FormRegistrarHistorial()
+        Dictionary<string, string> mapaColumnas = new Dictionary<string, string>()
+{
+    //MEDIDA DE LA VISTA
+    { "txtOptometro", "Nombre_optometra" },
+    { "txtLEJOSODEsferico", "Lejos_OD_Esferico" },
+    { "txtLEJOSODCilindrico", "Lejos_OD_Cilindrico" },
+    { "txtLEJOSODEje", "Lejos_OD_EJE" },
+    { "txtLEJOSODDIP", "Lejos_OD_DIP" },
+    { "txtLEJOSODAgudezaVisual", "Lejos_OD_AV" },
+
+    { "txtLEJOSOIEsferico", "Lejos_OI_Esferico" },
+    { "txtLEJOSOICilindrico", "Lejos_OI_Cilindrico" },
+    { "txtLEJOSOIEje", "Lejos_OI_EJE" },
+    { "txtLEJOSOIDIP", "Lejos_OI_DIP" },
+    { "txtLEJOSOIAgudezaVisual", "Lejos_OI_AV" },
+
+    { "txtCERCAODEsferico", "Cerca_OD_Esferico" },
+    { "txtCERCAODCilindrico", "Cerca_OD_Cilindrico" },
+    { "txtCERCAODEje", "Cerca_OD_EJE" },
+    { "txtCERCAODDIP", "Cerca_OD_DIP" },
+    { "txtCERCAODAgudezaVisual", "Cerca_OD_AV" },
+
+    { "txtCERCAOIEsferico", "Cerca_OI_Esferico" },
+    { "txtCERCAOICilindrico", "Cerca_OI_Cilindrico" },
+    { "txtCERCAOIEje", "Cerca_OI_EJE" },
+    { "txtCERCAOIDIP", "Cerca_OI_DIP" },
+    { "txtCERCAOIAgudezaVisual", "Cerca_OI_AV" },
+    { "txtObservaciones1","Observaciones" },
+
+
+
+    //CONSULTA OFTALMOLÓGICA
+    { "txtDoctorExamenOftalmologico", "Nombre_oftalmologo" },
+    { "txtSignosSintomas1", "SignosSintomas" },
+    { "txtExamenOftalmologico","ExamenOftamologico" },
+    {"panelOjoDerecho","OjoDerecho" },
+    {"panelOjoIzquierdo","OjoIzquierdo" },
+
+
+    //CONSULTA CON RETINOLOGO
+    {"txtDoctorDiagnostico","Nombre_retinologo" },
+    {"txtObservacionesDiagnostico","Diagnostico" },
+    {"txtAVSC_OD","AV_SC_OD" },
+    {"txtAVSC_OI","AV_SC_OI" },
+    {"txtAVCC_OD","AV_CC_OD" },
+    {"txtAVCC_OI","AV_CC_OI" },
+    {"txtPIOICARE_OD","PIO_OD" },
+    {"txtPIOICARE_OI","PIO_OI" },
+    {"dtpFechaDiagnostico","Fecha_Diagnostico" },
+    {"dtpHoraInicio","Hora_Inicio" },
+    {"dtpHoraTermino","Hora_Termino" },
+    {"txtTratamiento1","Tratamiento" },
+    {"lblNombreArchivo","NombreArchivo" },
+    {"Archivo","Archivo"}
+
+
+};
+        private int idHistorial;
+        public FormEditarH(int idHistorial)
         {
             InitializeComponent();
-            this.FormClosing += FormAdministracionUsuario_FormClosing;
-            MenuSuperiorBuilder.CrearMenuSuperiorAdaptable(this);
+            this.idHistorial = idHistorial;
             this.WindowState = FormWindowState.Maximized;
-            this.BackColor = Color.White;
             conexionBD = new ConexionDB();
-
+            this.BackColor = Color.White;
+            
 
             TableLayoutPanel layout = new TableLayoutPanel();
             layout.Dock = DockStyle.Fill;
             layout.ColumnCount = 1;
             layout.RowCount = 5;
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 15));   // Título ocupa 15% del alto
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 10));   // Título ocupa 10% del alto
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 10));   // Filtro y botones
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 65));   // Campos
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 7));    // Botón REGISTRAR
@@ -158,7 +218,7 @@ namespace OpticaSistema
             // Campos de la BD (Paciente)
             string[] camposPaciente = new string[]
             {
-                "Dni", "Apellidos", "Nombres"
+                "Dni", "Apellidos", "Nombres", "Edad"
             };
 
             foreach (string campo in camposPaciente)
@@ -185,10 +245,10 @@ namespace OpticaSistema
             dtpFechaConsulta.Name = "dtpFechaConsulta";
             dtpFechaConsulta.Dock = DockStyle.Fill;
             dtpFechaConsulta.Font = new Font("Segoe UI", 12);
-            dtpFechaConsulta.Value = DateTime.Now; // Valor inicial
-            dtpFechaConsulta.Format = DateTimePickerFormat.Short; // Formato de fecha corta
+            dtpFechaConsulta.Format = DateTimePickerFormat.Custom;
+            dtpFechaConsulta.CustomFormat = "dd/MM/yyyy HH:mm:ss";
+            dtpFechaConsulta.Enabled = false;
             fechaLayout.Controls.Add(dtpFechaConsulta, 0, 1);
-            
 
             // 2. Motivo de Consulta
             TableLayoutPanel motivoLayout = CrearCampoLayout("MotivoConsulta", 400, 80, false);
@@ -197,7 +257,8 @@ namespace OpticaSistema
 
             // ComboBox en lugar de TextBox
             ComboBox cmbMotivo = new ComboBox();
-            cmbMotivo.Name = "cmbMotivoConsulta";
+            cmbMotivo.Name = "cmbMotivoConsulta1";
+            cmbMotivo.Enabled = false;
             cmbMotivo.Dock = DockStyle.Fill;
             cmbMotivo.Font = new Font("Segoe UI", 12);
             cmbMotivo.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -213,7 +274,6 @@ namespace OpticaSistema
 
             // Agregar al layout
             motivoLayout.Controls.Add(cmbMotivo, 0, 1);
-
             panelHorizontal.Controls.Add(panelDatosBasicos);
             panelFechaMotivo.Controls.Add(fechaLayout);
             panelFechaMotivo.Controls.Add(motivoLayout);
@@ -230,6 +290,7 @@ namespace OpticaSistema
 
             TextBox txtObservaciones = new TextBox();
             txtObservaciones.Name = "txtObservaciones1";
+            txtObservaciones.ReadOnly = true;
             txtObservaciones.Dock = DockStyle.Fill;
             txtObservaciones.Font = new Font("Segoe UI", 12);
             txtObservaciones.Multiline = true;
@@ -270,7 +331,7 @@ namespace OpticaSistema
             txtExamenTitulo.Width = 250;
             txtExamenTitulo.Font = new Font("Segoe UI", 12);
             txtExamenTitulo.Margin = new Padding(20, 0, 0, 0);
-
+            txtExamenTitulo.ReadOnly = true;
             panelExamenTitulo.Controls.Add(lblExamen);
             panelExamenTitulo.Controls.Add(txtExamenTitulo);
 
@@ -297,15 +358,13 @@ namespace OpticaSistema
             FlowLayoutPanel panelOjos = new FlowLayoutPanel();
             panelOjos.FlowDirection = FlowDirection.LeftToRight;
             panelOjos.Width = 820;
-            
+
             panelOjos.AutoSize = true;
             panelOjos.Margin = new Padding(10, 20, 10, 10);
             panelOjos.WrapContents = false;
 
             panelOjos.Controls.Add(CrearPanelDibujoOjo("Ojo Derecho"));
             panelOjos.Controls.Add(CrearPanelDibujoOjo("Ojo Izquierdo"));
-
-            
 
             // === TRATAMIENTO ===
             TableLayoutPanel tratamientoLayout = CrearCampoLayout("Tratamiento", 820, 120, false);
@@ -339,6 +398,7 @@ namespace OpticaSistema
             //Nombre del archivo
             Label lblNombreArchivo = new Label();
             lblNombreArchivo.Text = "Ningún archivo seleccionado";
+            lblNombreArchivo.Name = "lblNombreArchivo";
             lblNombreArchivo.Font = new Font("Segoe UI", 10, FontStyle.Italic);
             lblNombreArchivo.ForeColor = Color.DimGray;
             lblNombreArchivo.AutoSize = true;
@@ -347,6 +407,8 @@ namespace OpticaSistema
             // Botón para subir PDF
             Button btnSubirPDF = new Button();
             btnSubirPDF.Text = "Subir PDF";
+            btnSubirPDF.Name = "btnSubirPDF";
+            btnSubirPDF.Enabled = false;
             btnSubirPDF.Font = new Font("Segoe UI", 11, FontStyle.Bold);
             btnSubirPDF.Width = 160;
             btnSubirPDF.Height = 40;
@@ -354,9 +416,6 @@ namespace OpticaSistema
             btnSubirPDF.ForeColor = Color.White;
             btnSubirPDF.FlatStyle = FlatStyle.Flat;
             btnSubirPDF.FlatAppearance.BorderSize = 0;
-
-            byte[] archivoPDF = null;
-            string nombreArchivo = null;
 
             // Evento para seleccionar el archivo
             btnSubirPDF.Click += (s, e) =>
@@ -373,13 +432,20 @@ namespace OpticaSistema
 
                         try
                         {
-                            archivoPDF = File.ReadAllBytes(rutaPDF);
-                            nombreArchivo = nombreArchivoPDF;
+                            // Leer bytes del archivo
+                            byte[] bytesPDF = File.ReadAllBytes(rutaPDF);
 
-                            // ✅ Actualizar el label con el nombre del archivo
+                            // Guardar nombre y bytes
                             lblNombreArchivo.Text = nombreArchivoPDF;
                             lblNombreArchivo.Font = new Font("Segoe UI", 10, FontStyle.Regular);
                             lblNombreArchivo.ForeColor = Color.Black;
+
+                            // 🔹 Guardamos bytes en Tag para acceso posterior
+                            lblNombreArchivo.Tag = bytesPDF;
+
+                            // También los guardamos en las variables globales (opcional)
+                            archivoPDF = bytesPDF;
+                            nombreArchivo = nombreArchivoPDF;
 
                             MessageBox.Show("Archivo cargado correctamente.", "Éxito",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -388,9 +454,11 @@ namespace OpticaSistema
                         {
                             MessageBox.Show("Error al leer el archivo: " + ex.Message, "Error",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+
                             archivoPDF = null;
                             nombreArchivo = null;
                             lblNombreArchivo.Text = "Ningún archivo seleccionado";
+                            lblNombreArchivo.Tag = null;
                             lblNombreArchivo.Font = new Font("Segoe UI", 10, FontStyle.Italic);
                             lblNombreArchivo.ForeColor = Color.DimGray;
                         }
@@ -406,7 +474,7 @@ namespace OpticaSistema
             panelHorizontal.Controls.Add(observacionesLayout);
             panelHorizontal.Controls.Add(panelExamenTitulo);
             panelHorizontal.Controls.Add(examenLayout);
-            
+
             panelHorizontal.Controls.Add(signosLayout);
             panelHorizontal.Controls.Add(panelOjos);
             panelHorizontal.Controls.Add(CrearPanelDiagnostico());
@@ -420,11 +488,6 @@ namespace OpticaSistema
             // Agregar al layout principal en la fila 2
             layout.Controls.Add(contenedorCentral, 0, 2);
 
-            btnLimpiar.Click += (s, e) =>
-            {
-                LimpiarCamposRegistro();
-                txtBuscar.Text = string.Empty; // Limpiar también el DNI de búsqueda
-            };
 
             // Panel para centrar el botón
             FlowLayoutPanel panelBotonRegistrar = new FlowLayoutPanel();
@@ -439,7 +502,7 @@ namespace OpticaSistema
 
             // Botón REGISTRAR
             Button btnRegistrar = new Button();
-            btnRegistrar.Text = "REGISTRAR";
+            btnRegistrar.Text = "EDITAR";
             btnRegistrar.Font = new Font("Segoe UI", 12, FontStyle.Bold);
             btnRegistrar.Width = 200;
             btnRegistrar.Height = 45;
@@ -449,309 +512,24 @@ namespace OpticaSistema
             btnRegistrar.ForeColor = Color.White;
             btnRegistrar.FlatStyle = FlatStyle.Flat;
             btnRegistrar.FlatAppearance.BorderSize = 0;
-
+            
             // Agregar botón al panel
             panelBotonRegistrar.Controls.Add(btnRegistrar);
-            btnRegistrar.Click += (s, e) =>
-            {
-                string dni = txtBuscar.Text.Trim();
-
-                // 🔹 Validar DNI
-                if (dni.Length != 8)
-                {
-                    MessageBox.Show("Ingrese un DNI válido de 8 dígitos.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // 🔹 Motivo de consulta
-                string motivoConsulta = null;
-                Control[] ctrlMotivo = panelHorizontal.Controls.Find("cmbMotivoConsulta", true);
-                if (ctrlMotivo.Length > 0 && ctrlMotivo[0] is ComboBox cmbMotivo)
-                {
-                    if (cmbMotivo.SelectedItem != null && !string.IsNullOrWhiteSpace(cmbMotivo.SelectedItem.ToString()))
-                        motivoConsulta = cmbMotivo.SelectedItem.ToString();
-                }
-                if (string.IsNullOrEmpty(motivoConsulta))
-                {
-                    MessageBox.Show("Debe seleccionar un motivo de consulta.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // 🔹 Fecha de consulta
-                DateTime fechaConsulta = DateTime.Now;
-                Control[] ctrlFecha = panelHorizontal.Controls.Find("dtpFechaConsulta", true);
-                if (ctrlFecha.Length > 0 && ctrlFecha[0] is DateTimePicker dtpFecha)
-                    fechaConsulta = dtpFecha.Value;
-
-                // 🔹 Turno
-                int estadoTurno = (DateTime.Now.Hour < 14) ? 1 : 0;
-
-                using (SqlConnection cn = conexionBD.Conectar())
-                {
-                    try
-                    {
-                        cn.Open();
-
-                        // 🔹 Buscar IdPaciente
-                        int idPaciente;
-                        using (SqlCommand cmdPaciente = new SqlCommand("SELECT Id FROM PacienteBD WHERE Dni = @dni AND Estado = 1", cn))
-                        {
-                            cmdPaciente.Parameters.AddWithValue("@dni", dni);
-                            object result = cmdPaciente.ExecuteScalar();
-                            if (result == null)
-                            {
-                                MessageBox.Show("El paciente no existe.", "Advertencia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                return;
-                            }
-                            idPaciente = Convert.ToInt32(result);
-                        }
-
-                        // 🔹 Helper functions
-                        object GetTextBoxValue(string nombre)
-                        {
-                            Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
-                            if (ctrls.Length > 0 && ctrls[0] is TextBox txt)
-                                return string.IsNullOrWhiteSpace(txt.Text) ? DBNull.Value : txt.Text.Trim();
-                            return DBNull.Value;
-                        }
-
-                        object GetDecimalValue(string nombre)
-                        {
-                            Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
-                            if (ctrls.Length > 0 && ctrls[0] is TextBox txt)
-                            {
-                                if (decimal.TryParse(txt.Text.Trim(), out decimal val))
-                                    return val;
-                            }
-                            return DBNull.Value;
-                        }
-
-                        object GetImageValue(string nombre)
-                        {
-                            Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
-                            if (ctrls.Length > 0 && ctrls[0] is FlowLayoutPanel panel)
-                            {
-                                PictureBox pic = panel.Controls.OfType<PictureBox>().FirstOrDefault();
-                                if (pic?.Image != null)
-                                {
-                                    using (MemoryStream ms = new MemoryStream())
-                                    {
-                                        pic.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                                        return ms.ToArray();
-                                    }
-                                }
-                            }
-                            return DBNull.Value;
-                        }
-
-                        object GetDateValue(string nombre)
-                        {
-                            Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
-                            if (ctrls.Length > 0 && ctrls[0] is DateTimePicker dtp)
-                                return dtp.Value.Date;
-                            return DBNull.Value;
-                        }
-
-                        object GetTimeValue(string nombre)
-                        {
-                            Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
-                            if (ctrls.Length > 0 && ctrls[0] is DateTimePicker dtp)
-                                return dtp.Value.TimeOfDay;
-                            return DBNull.Value;
-                        }
-
-                        // 🔹 Diccionario solo para campos que antes daban null
-                        Dictionary<string, string> mapaColumnasR = new Dictionary<string, string>()
-        {
-            { "txtAVSC_OD", "AV_SC_OD" },
-            { "txtAVSC_OI", "AV_SC_OI" },
-            { "txtAVCC_OD", "AV_CC_OD" },
-            { "txtAVCC_OI", "AV_CC_OI" },
-            { "txtPIOICARE_OD", "PIO_OD" },
-            { "txtPIOICARE_OI", "PIO_OI" }
-        };
-
-                        // 🔹 Comando INSERT completo
-                        string sqlInsert = @"
-INSERT INTO HistorialClinicoBD
-(
-    IdPaciente, FechaConsulta, MotivoConsulta, EstadoHistorial, EstadoHistorialTurno,
-    Nombre_optometra, Lejos_OD_Esferico, Lejos_OD_Cilindrico, Lejos_OD_EJE, Lejos_OD_DIP, Lejos_OD_AV,
-    Lejos_OI_Esferico, Lejos_OI_Cilindrico, Lejos_OI_EJE, Lejos_OI_DIP, Lejos_OI_AV,
-    Cerca_OD_Esferico, Cerca_OD_Cilindrico, Cerca_OD_EJE, Cerca_OD_DIP, Cerca_OD_AV,
-    Cerca_OI_Esferico, Cerca_OI_Cilindrico, Cerca_OI_EJE, Cerca_OI_DIP, Cerca_OI_AV,
-    Observaciones,
-    Nombre_oftalmologo, SignosSintomas, ExamenOftamologico, OjoDerecho, OjoIzquierdo,
-    Nombre_retinologo, Diagnostico, AV_SC_OD, AV_SC_OI, AV_CC_OD, AV_CC_OI,
-    PIO_OD, PIO_OI, Fecha_Diagnostico, Hora_Inicio, Hora_Termino, Tratamiento, NombreArchivo, Archivo
-)
-VALUES
-(
-    @IdPaciente, @FechaConsulta, @MotivoConsulta, @EstadoHistorial, @EstadoHistorialTurno,
-    @Nombre_optometra, @Lejos_OD_Esferico, @Lejos_OD_Cilindrico, @Lejos_OD_EJE, @Lejos_OD_DIP, @Lejos_OD_AV,
-    @Lejos_OI_Esferico, @Lejos_OI_Cilindrico, @Lejos_OI_EJE, @Lejos_OI_DIP, @Lejos_OI_AV,
-    @Cerca_OD_Esferico, @Cerca_OD_Cilindrico, @Cerca_OD_EJE, @Cerca_OD_DIP, @Cerca_OD_AV,
-    @Cerca_OI_Esferico, @Cerca_OI_Cilindrico, @Cerca_OI_EJE, @Cerca_OI_DIP, @Cerca_OI_AV,
-    @Observaciones,
-    @Nombre_oftalmologo, @SignosSintomas, @ExamenOftamologico, @OjoDerecho, @OjoIzquierdo,
-    @Nombre_retinologo, @Diagnostico, @AV_SC_OD, @AV_SC_OI, @AV_CC_OD, @AV_CC_OI,
-    @PIO_OD, @PIO_OI, @Fecha_Diagnostico, @Hora_Inicio, @Hora_Termino, @Tratamiento, @NombreArchivo, @Archivo
-)";
-
-                        using (SqlCommand cmd = new SqlCommand(sqlInsert, cn))
-                        {
-                            // 🔹 Parámetros básicos
-                            cmd.Parameters.Add("@IdPaciente", SqlDbType.Int).Value = idPaciente;
-                            cmd.Parameters.Add("@FechaConsulta", SqlDbType.DateTime).Value = fechaConsulta;
-                            cmd.Parameters.Add("@MotivoConsulta", SqlDbType.NVarChar, 100).Value = motivoConsulta;
-                            cmd.Parameters.Add("@EstadoHistorial", SqlDbType.Bit).Value = 0;
-                            cmd.Parameters.Add("@EstadoHistorialTurno", SqlDbType.Bit).Value = estadoTurno;
-
-                            // 🔹 Medidas de la vista y demás campos (igual que tu código original)
-                            cmd.Parameters.Add("@Nombre_optometra", SqlDbType.NVarChar, 400).Value = GetTextBoxValue("txtOptometro");
-                            cmd.Parameters.Add("@Lejos_OD_Esferico", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSODEsferico");
-                            cmd.Parameters.Add("@Lejos_OD_Cilindrico", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSODCilindrico");
-                            cmd.Parameters.Add("@Lejos_OD_EJE", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSODEje");
-                            cmd.Parameters.Add("@Lejos_OD_DIP", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSODDIP");
-                            cmd.Parameters.Add("@Lejos_OD_AV", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSODAgudezaVisual");
-
-                            cmd.Parameters.Add("@Lejos_OI_Esferico", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSOIEsferico");
-                            cmd.Parameters.Add("@Lejos_OI_Cilindrico", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSOICilindrico");
-                            cmd.Parameters.Add("@Lejos_OI_EJE", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSOIEje");
-                            cmd.Parameters.Add("@Lejos_OI_DIP", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSOIDIP");
-                            cmd.Parameters.Add("@Lejos_OI_AV", SqlDbType.Decimal).Value = GetDecimalValue("txtLEJOSOIAgudezaVisual");
-
-                            cmd.Parameters.Add("@Cerca_OD_Esferico", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAODEsferico");
-                            cmd.Parameters.Add("@Cerca_OD_Cilindrico", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAODCilindrico");
-                            cmd.Parameters.Add("@Cerca_OD_EJE", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAODEje");
-                            cmd.Parameters.Add("@Cerca_OD_DIP", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAODDIP");
-                            cmd.Parameters.Add("@Cerca_OD_AV", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAODAgudezaVisual");
-
-                            cmd.Parameters.Add("@Cerca_OI_Esferico", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAOIEsferico");
-                            cmd.Parameters.Add("@Cerca_OI_Cilindrico", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAOICilindrico");
-                            cmd.Parameters.Add("@Cerca_OI_EJE", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAOIEje");
-                            cmd.Parameters.Add("@Cerca_OI_DIP", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAOIDIP");
-                            cmd.Parameters.Add("@Cerca_OI_AV", SqlDbType.Decimal).Value = GetDecimalValue("txtCERCAOIAgudezaVisual");
-
-                            cmd.Parameters.Add("@Observaciones", SqlDbType.NVarChar).Value = GetTextBoxValue("txtObservaciones1");
-
-                            cmd.Parameters.Add("@Nombre_oftalmologo", SqlDbType.NVarChar, 400).Value = GetTextBoxValue("txtDoctorExamenOftalmologico");
-                            cmd.Parameters.Add("@SignosSintomas", SqlDbType.VarChar).Value = GetTextBoxValue("txtSignosSintomas1");
-                            cmd.Parameters.Add("@ExamenOftamologico", SqlDbType.NVarChar).Value = GetTextBoxValue("txtExamenOftalmologico");
-                            cmd.Parameters.Add("@OjoDerecho", SqlDbType.VarBinary).Value = GetImageValue("panelOjoDerecho");
-                            cmd.Parameters.Add("@OjoIzquierdo", SqlDbType.VarBinary).Value = GetImageValue("panelOjoIzquierdo");
-
-                            cmd.Parameters.Add("@Nombre_retinologo", SqlDbType.NVarChar, 400).Value = GetTextBoxValue("txtDoctorDiagnostico");
-                            cmd.Parameters.Add("@Diagnostico", SqlDbType.NVarChar).Value = GetTextBoxValue("txtObservacionesDiagnostico");
-
-                            // 🔹 Campos retinólogo usando foreach + mapaColumnasR
-                            foreach (var kvp in mapaColumnasR)
-                            {
-                                string nombreControl = kvp.Key;
-                                string parametroBD = kvp.Value;
-
-                                cmd.Parameters.Add($"@{parametroBD}", SqlDbType.VarChar, 50).Value = GetTextBoxValue(nombreControl);
-                            }
-
-                            cmd.Parameters.Add("@Fecha_Diagnostico", SqlDbType.Date).Value = GetDateValue("dtpFechaDiagnostico");
-                            cmd.Parameters.Add("@Hora_Inicio", SqlDbType.Time).Value = GetTimeValue("dtpHoraInicio");
-                            cmd.Parameters.Add("@Hora_Termino", SqlDbType.Time).Value = GetTimeValue("dtpHoraTermino");
-                            cmd.Parameters.Add("@Tratamiento", SqlDbType.NVarChar).Value = GetTextBoxValue("txtTratamiento1");
-                            cmd.Parameters.Add("@NombreArchivo", SqlDbType.NVarChar).Value =
-                            string.IsNullOrWhiteSpace(lblNombreArchivo.Text) || lblNombreArchivo.Text == "Ningún archivo seleccionado"
-                            ? DBNull.Value
-                            : lblNombreArchivo.Text;
-                            if (archivoPDF != null)
-                                cmd.Parameters.Add("@Archivo", SqlDbType.VarBinary).Value = archivoPDF;
-                            else
-                                cmd.Parameters.Add("@Archivo", SqlDbType.VarBinary).Value = DBNull.Value;
-
-                            // 🔹 Ejecutar
-                            cmd.ExecuteNonQuery();
-
-                            MessageBox.Show("Historial clínico registrado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                            LimpiarControles(panelHorizontal);
-                            LimpiarCamposRegistro();
-                            txtBuscar.Text = string.Empty;
-                            FlowLayoutPanel panelOjoDerecho = this.Controls.Find("panelOjoDerecho", true)
-                                      .FirstOrDefault() as FlowLayoutPanel;
-                            FlowLayoutPanel panelOjoIzquierdo = this.Controls.Find("panelOjoIzquierdo", true)
-                                                                  .FirstOrDefault() as FlowLayoutPanel;
-
-                            if (panelOjoDerecho != null) LimpiarOjo(panelOjoDerecho);
-                            if (panelOjoIzquierdo != null) LimpiarOjo(panelOjoIzquierdo);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error al registrar el historial: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-
-            };
-
-
 
             // Agregar panel al layout en la fila 3
             layout.Controls.Add(panelBotonRegistrar, 0, 3);
-
-            btnBuscar.Click += (s, e) =>
+            btnRegistrar.Click += (s, e) =>
             {
-                string dni = txtBuscar.Text.Trim();
+                EditarPorMotivo(idHistorial);
 
-                if (dni.Length != 8)
-                {
-                    MessageBox.Show("Ingrese un DNI válido de 8 dígitos.");
-                    return;
-                }
-
-                using (SqlConnection cn = conexionBD.Conectar())
-                {
-                    try
-                    {
-                        cn.Open();
-                        string query = @"SELECT * FROM PacienteBD WHERE Dni = @dni AND Estado = 1";
-
-                        SqlCommand cmd = new SqlCommand(query, cn);
-                        cmd.Parameters.AddWithValue("@dni", dni);
-                        SqlDataAdapter da = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        da.Fill(dt);
-
-                        if (dt.Rows.Count == 0)
-                        {
-                            MessageBox.Show("No se encontró ningún paciente con ese DNI.");
-                            return;
-                        }
-
-                        // Obtener la fila
-                        DataRow row = dt.Rows[0];
-
-                        // Lista de campos de paciente
-                        string[] campos = new string[]
-                        {
-                            "Apellidos", "Nombres", "Dni"
-                        };
-
-                        // Buscar cada TextBox por su nombre y asignar el valor
-                        foreach (string campo in campos)
-                        {
-                            Control[] controles = panelHorizontal.Controls.Find("txt" + campo, true);
-                            if (controles.Length > 0 && controles[0] is TextBox txt)
-                            {
-                                object valor = row[campo];
-                                txt.Text = valor != null ? valor.ToString() : "";
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error al consultar la base de datos: " + ex.Message);
-                    }
-                }
             };
+            CargarDatosHistorial();
+        }
 
+        private void FormEditarH_Load(object sender, EventArgs e)
+        {
+            this.Text = "OpticaSistema - EditarHistorial";
+            this.Icon = new Icon("Imagenes/log.ico");
         }
 
         private Control CrearPanelDibujoOjo(string titulo)
@@ -859,26 +637,12 @@ VALUES
 
             panelOjo.Controls.Add(picOjo);
             panelOjo.Controls.Add(panelBotones);
-            picOjo.Tag = Tuple.Create(imagenBase, capaDibujo);
+
             return panelOjo;
-        }
-        void LimpiarOjo(FlowLayoutPanel panelOjo)
-        {
-            PictureBox picOjo = panelOjo.Controls.OfType<PictureBox>().FirstOrDefault();
-            if (picOjo != null && picOjo.Tag is Tuple<Bitmap, Bitmap> tupla)
-            {
-                Bitmap baseImg = tupla.Item1;
-                Bitmap capa = tupla.Item2;
 
-                // Limpiar la capa de dibujo
-                using (Graphics g = Graphics.FromImage(capa))
-                    g.Clear(Color.Transparent);
 
-                // Combinar con la imagen base
-                picOjo.Image = Combinar(baseImg, capa);
-            }
         }
-        // --- Función auxiliar para combinar dos bitmaps ---
+
         private Bitmap Combinar(Bitmap baseImg, Bitmap capa)
         {
             Bitmap resultado = new Bitmap(baseImg.Width, baseImg.Height);
@@ -890,9 +654,6 @@ VALUES
             return resultado;
         }
 
-        // --- MÉTODOS AUXILIARES ---
-
-        // Método para crear el layout estándar de Etiqueta + Control
         private TableLayoutPanel CrearCampoLayout(string nombreCampo, int ancho, int alto, bool esReadOnly)
         {
             TableLayoutPanel campoLayout = new TableLayoutPanel();
@@ -921,10 +682,9 @@ VALUES
 
             return campoLayout;
         }
-        // Método para crear la tabla de Correctores (la parte más compleja)
+
         private Control CrearPanelDiagnostico()
-        {
-            // FlowLayoutPanel principal
+        {// FlowLayoutPanel principal
             FlowLayoutPanel panelReceta = new FlowLayoutPanel();
             panelReceta.FlowDirection = FlowDirection.TopDown;
             panelReceta.AutoSize = true;
@@ -947,6 +707,7 @@ VALUES
 
             TextBox txtDiagnosticoTitulo = new TextBox();
             txtDiagnosticoTitulo.Name = "txtDoctorDiagnostico";
+            txtDiagnosticoTitulo.ReadOnly = true;
             txtDiagnosticoTitulo.Width = 250;
             txtDiagnosticoTitulo.Font = new Font("Segoe UI", 12);
             txtDiagnosticoTitulo.Margin = new Padding(20, 0, 0, 0);
@@ -961,7 +722,6 @@ VALUES
 
             panelTituloTexto.Controls.Add(lblTitulo);
             panelTituloTexto.Controls.Add(txtDiagnosticoTitulo);
-
             panelReceta.Controls.Add(chkMostrar);
             panelReceta.Controls.Add(panelTituloTexto);
 
@@ -975,7 +735,7 @@ VALUES
             contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
 
             // --- Tabla Diagnóstico ---
-            TableLayoutPanel tablaDiagnostico = new TableLayoutPanel();
+            tablaDiagnostico = new TableLayoutPanel();
             tablaDiagnostico.Name = "tblDiagnostico";
             tablaDiagnostico.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
             tablaDiagnostico.BackColor = Color.WhiteSmoke;
@@ -1034,7 +794,7 @@ VALUES
                     tablaDiagnostico.Controls.Add(dtpFecha, 1, fila);
                     tablaDiagnostico.SetColumnSpan(dtpFecha, 2);
                 }
-                else if (campos[r] == "HORA DE INICIO:" || campos[r] == "HORA DE TÉRMINO:")
+                else if (campos[r].Contains("HORA"))
                 {
                     DateTimePicker dtpHora = new DateTimePicker();
                     dtpHora.Format = DateTimePickerFormat.Time;
@@ -1047,18 +807,22 @@ VALUES
                 }
                 else
                 {
+                    // TextBox OD
                     TextBox txtOD = new TextBox();
                     txtOD.Dock = DockStyle.Fill;
                     txtOD.Name = $"txt{campoBase}_OD";
                     txtOD.TextAlign = HorizontalAlignment.Center;
                     txtOD.Font = new Font("Segoe UI", 11);
+                    txtOD.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOD, 1, fila);
 
+                    // TextBox OI
                     TextBox txtOI = new TextBox();
                     txtOI.Dock = DockStyle.Fill;
                     txtOI.Name = $"txt{campoBase}_OI";
                     txtOI.TextAlign = HorizontalAlignment.Center;
                     txtOI.Font = new Font("Segoe UI", 11);
+                    txtOI.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOI, 2, fila);
                 }
             }
@@ -1072,18 +836,18 @@ VALUES
             txtObservaciones.Height = 220;
             txtObservaciones.Name = "txtObservacionesDiagnostico";
             txtObservaciones.Margin = new Padding(0, 0, 0, 0);
+            txtObservaciones.ReadOnly = true; // inicial deshabilitado
 
-            // === Estado inicial: solo textarea, pero con ancho total ===
+            // Estado inicial: solo textarea
             contenedor.ColumnCount = 1;
             contenedor.ColumnStyles.Clear();
             contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             contenedor.Controls.Add(txtObservaciones, 0, 0);
-            txtObservaciones.Dock = DockStyle.Fill;
-            txtObservaciones.Width = 820 - 40; // igual al ancho de la versión completa
+            txtObservaciones.Width = 780;
 
             panelReceta.Controls.Add(contenedor);
 
-            // === Evento del CheckBox ===
+            // Evento CheckBox
             chkMostrar.CheckedChanged += (s, e) =>
             {
                 contenedor.SuspendLayout();
@@ -1091,13 +855,12 @@ VALUES
 
                 if (chkMostrar.Checked)
                 {
-                    // Mostrar tabla y textarea
                     contenedor.ColumnCount = 2;
                     contenedor.RowCount = 1;
                     contenedor.ColumnStyles.Clear();
                     contenedor.RowStyles.Clear();
-                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 480F)); // tabla
-                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F)); // textarea
+                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 480F));
+                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
                     contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(tablaDiagnostico, 0, 0);
@@ -1106,11 +869,9 @@ VALUES
                     tablaDiagnostico.Dock = DockStyle.Fill;
                     txtObservaciones.Dock = DockStyle.Fill;
                     txtObservaciones.Margin = new Padding(10, 0, 0, 0);
-                    txtObservaciones.Height = tablaDiagnostico.Height;
                 }
                 else
                 {
-                    // Solo textarea
                     contenedor.ColumnCount = 1;
                     contenedor.RowCount = 1;
                     contenedor.ColumnStyles.Clear();
@@ -1119,10 +880,8 @@ VALUES
                     contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(txtObservaciones, 0, 0);
-
                     txtObservaciones.Dock = DockStyle.Fill;
                     txtObservaciones.Margin = new Padding(0);
-                    txtObservaciones.Width = 780; // ocupa casi todo el ancho
                 }
 
                 contenedor.ResumeLayout();
@@ -1130,49 +889,6 @@ VALUES
 
             return panelReceta;
         }
-
-        void LimpiarControles(Control parent)
-        {
-            // TextBox
-            string[] txts = {
-        "txtOptometro", "txtLEJOSODEsferico", "txtLEJOSODCilindrico", "txtLEJOSODEje", "txtLEJOSODDIP", "txtLEJOSODAgudezaVisual",
-        "txtLEJOSOIEsferico", "txtLEJOSOICilindrico", "txtLEJOSOIEje", "txtLEJOSOIDIP", "txtLEJOSOIAgudezaVisual",
-        "txtCERCAODEsferico", "txtCERCAODCilindrico", "txtCERCAODEje", "txtCERCAODDIP", "txtCERCAODAgudezaVisual",
-        "txtCERCAOIEsferico", "txtCERCAOICilindrico", "txtCERCAOIEje", "txtCERCAOIDIP", "txtCERCAOIAgudezaVisual",
-        "txtObservaciones1", "txtDoctorExamenOftalmologico", "txtSignosSintomas1", "txtExamenOftalmologico",
-        "txtDoctorDiagnostico", "txtObservacionesDiagnostico",
-        "txtAVSC_OD","txtAVSC_OI","txtAVCC_OD","txtAVCC_OI",
-        "txtPIOICARE_OD","txtPIOICARE_OI",
-        "txtTratamiento1"
-    };
-
-            foreach (string nombre in txts)
-            {
-                Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
-                if (ctrls.Length > 0 && ctrls[0] is TextBox txt)
-                    txt.Clear();
-            }
-
-            // ComboBox
-            Control[] ctrlMotivo = panelHorizontal.Controls.Find("cmbMotivoConsulta", true);
-            if (ctrlMotivo.Length > 0 && ctrlMotivo[0] is ComboBox cmbMotivo)
-                cmbMotivo.SelectedIndex = -1;
-
-            // DateTimePicker
-            string[] dtps = { "dtpFechaConsulta", "dtpFechaDiagnostico", "dtpHoraInicio", "dtpHoraTermino" };
-            foreach (string nombre in dtps)
-            {
-                Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
-                if (ctrls.Length > 0 && ctrls[0] is DateTimePicker dtp)
-                    dtp.Value = DateTime.Now;
-            }
-            
-            
-        }
-
-
-
-        // Método para crear la tabla de Correctores (la parte más compleja)
         private Control CrearPanelCorrectores()
         {
             // FlowLayoutPanel para el título y la tabla
@@ -1200,6 +916,7 @@ VALUES
             TextBox txtOptometro = new TextBox();
             txtOptometro.Name = "txtOptometro";
             txtOptometro.Width = 250;
+            txtOptometro.ReadOnly = true;
             txtOptometro.Font = new Font("Segoe UI", 12);
             txtOptometro.Margin = new Padding(20, 0, 0, 0);
             panelOptometro.Controls.Add(lblOptometro);
@@ -1311,6 +1028,7 @@ VALUES
                     TextBox txtReceta = new TextBox();
                     txtReceta.Name = $"txt{tipos[r]}{ojos[r]}{camposReceta[c]}";
                     txtReceta.Dock = DockStyle.Fill;
+                    txtReceta.ReadOnly = true;
                     txtReceta.BorderStyle = BorderStyle.None;
                     txtReceta.TextAlign = HorizontalAlignment.Center;
                     txtReceta.Font = new Font("Segoe UI", 11);
@@ -1319,64 +1037,628 @@ VALUES
                     tablaCorrectores.Controls.Add(txtReceta, 2 + c, fila);
                 }
 
-                
+
             }
 
             panelReceta.Controls.Add(tablaCorrectores);
             return panelReceta;
         }
 
-
-        // --- FIN MÉTODOS AUXILIARES ---
-
-        private void FormRegistrarHistorial_Load(object sender, EventArgs e)
+        private void CargarDatosHistorial()
         {
-            this.Text = "OpticaSistema - RegistrarHistorial";
-            this.Icon = new Icon("Imagenes/log.ico");
-        }
+            string[] camposPaciente = new string[] { "Dni", "Apellidos", "Nombres", "Edad" };
+            string tipoUsuario = SesionUsuario.TipoUsuario; // O, F, R
 
-        private void FormAdministracionUsuario_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private void LimpiarCamposRegistro()
-        {
-            // Limpiar campos de paciente
-            string[] camposPaciente = new string[]
+            using (SqlConnection con = conexionBD.Conectar())
             {
-               "Dni", "Apellidos", "Nombres"
-            };
+                string query = @"
+SELECT 
+     p.Dni, p.Apellidos, p.Nombres, p.Edad,
+    h.FechaConsulta, h.MotivoConsulta,
+    h.Nombre_optometra,
+    h.Nombre_oftalmologo,
+    h.Nombre_retinologo,
+    h.Lejos_OD_Esferico, h.Lejos_OD_Cilindrico, h.Lejos_OD_EJE, h.Lejos_OD_DIP, h.Lejos_OD_AV,
+    h.Lejos_OI_Esferico, h.Lejos_OI_Cilindrico, h.Lejos_OI_EJE, h.Lejos_OI_DIP, h.Lejos_OI_AV,
+    h.Cerca_OD_Esferico, h.Cerca_OD_Cilindrico, h.Cerca_OD_EJE, h.Cerca_OD_DIP, h.Cerca_OD_AV,
+    h.Cerca_OI_Esferico, h.Cerca_OI_Cilindrico, h.Cerca_OI_EJE, h.Cerca_OI_DIP, h.Cerca_OI_AV,
+    h.Observaciones,
+    h.SignosSintomas, h.ExamenOftamologico, h.OjoDerecho, h.OjoIzquierdo,
+    h.Diagnostico, h.AV_SC_OD, h.AV_SC_OI, h.AV_CC_OD, h.AV_CC_OI, h.PIO_OD, h.PIO_OI,
+    h.Fecha_Diagnostico, h.Hora_Inicio, h.Hora_Termino, h.Tratamiento, h.NombreArchivo, h.Archivo
+FROM HistorialClinicoBD h
+INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
+WHERE h.Id = @Id";
 
-            foreach (string campo in camposPaciente)
-            {
-                Control[] controles = panelHorizontal.Controls.Find("txt" + campo, true);
-                if (controles.Length > 0 && controles[0] is TextBox txt)
+                using (SqlCommand cmd = new SqlCommand(query, con))
                 {
-                    txt.Text = string.Empty;
-                }
-            }
+                    cmd.Parameters.AddWithValue("@Id", idHistorial);
+                    con.Open();
+                    SqlDataReader reader = cmd.ExecuteReader();
 
-            // Limpiar Motivo de Consulta
-            Control[] txtMotivo = panelHorizontal.Controls.Find("txtMotivoConsulta", true);
-            if (txtMotivo.Length > 0 && txtMotivo[0] is TextBox)
-            {
-                ((TextBox)txtMotivo[0]).Text = string.Empty;
-            }
-
-            // Limpiar Correctores (la tabla)
-            Control[] tabla = panelHorizontal.Controls.Find("tblCorrectores", true);
-            if (tabla.Length > 0 && tabla[0] is TableLayoutPanel tbl)
-            {
-                // Iterar sobre todos los controles de la tabla que son TextBox y limpiarlos
-                foreach (Control control in tbl.Controls)
-                {
-                    if (control is TextBox txtReceta)
+                    if (reader.Read())
                     {
-                        txtReceta.Text = string.Empty;
+                        // === Cargar datos del paciente ===
+                        foreach (string campo in camposPaciente)
+                        {
+                            Control[] controles = panelHorizontal.Controls.Find("txt" + campo, true);
+                            if (controles.Length > 0 && controles[0] is TextBox txt)
+                                txt.Text = reader[campo].ToString();
+                        }
+
+                        // === Cargar fecha de consulta ===
+                        Control[] fechaControl = panelHorizontal.Controls.Find("dtpFechaConsulta", true);
+                        if (fechaControl.Length > 0 && fechaControl[0] is DateTimePicker dtp)
+                            dtp.Value = Convert.ToDateTime(reader["FechaConsulta"]);
+
+                        // === Cargar motivo de consulta ===
+                        string motivoConsulta = reader["MotivoConsulta"].ToString();
+                        Control[] controlesMotivo = panelHorizontal.Controls.Find("cmbMotivoConsulta1", true);
+
+                        if (controlesMotivo.Length > 0 && controlesMotivo[0] is ComboBox cmbMotivo)
+                        {
+                            cmbMotivo.SelectedItem = motivoConsulta;
+
+                            // Si no se encuentra, intentar asignar manualmente el texto
+                            if (cmbMotivo.SelectedItem == null)
+                                cmbMotivo.Text = motivoConsulta;
+
+                            MessageBox.Show("" + motivoConsulta);
+                            // 👇 Aplicar validaciones según el motivo
+                            AplicarValidacionesPorMotivo(motivoConsulta, tipoUsuario);
+
+                            if (motivoConsulta.Equals("exámen ocular completo", StringComparison.OrdinalIgnoreCase))
+                            {
+                                CargarDatosExamenOcularCompleto();
+
+                            }else if(motivoConsulta.Equals("consulta con retinólogo", StringComparison.OrdinalIgnoreCase))
+                            {
+                                CargarCamposRetinologo(reader);
+
+                            }else if(motivoConsulta.Equals("medida de la vista", StringComparison.OrdinalIgnoreCase))
+                            {
+                                CargarCamposOptometra(reader);
+                            }
+                            else if(motivoConsulta.Equals("consulta oftalmológica", StringComparison.OrdinalIgnoreCase))
+                            {
+                                CargarCamposOftalmologo(reader);
+                            }else
+                            {
+                                MessageBox.Show("Error");
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("No se encontró el control cmbMotivoConsulta en el formulario.");
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("No se encontraron datos para el historial clínico especificado.");
                     }
                 }
             }
         }
+
+        private void AplicarValidacionesPorMotivo(string motivoConsulta, string tipoUsuario)
+        {
+            motivoConsulta = motivoConsulta.Trim().ToLower();
+            
+            // 🔹 MEDIDA DE LA VISTA
+            if (motivoConsulta == "medida de la vista")
+            {
+                HabilitarControlesOftalmologo(false);
+                HabilitarControlesRetinologo(false);
+                HabilitarControlesMedidaVista(true);
+            }
+
+            // 🔹 CONSULTA OFTALMOLÓGICA
+            else if (motivoConsulta == "consulta oftalmológica")
+            {
+                HabilitarControlesMedidaVista(false);
+                HabilitarControlesOftalmologo(true);
+                HabilitarControlesRetinologo(false);
+            }
+
+            // 🔹 CONSULTA CON RETINÓLOGO
+            else if (motivoConsulta == "consulta con retinólogo")
+            {
+                HabilitarControlesMedidaVista(false);
+                HabilitarControlesOftalmologo(false);
+                HabilitarControlesRetinologo(true);
+            }
+
+            // 🔹 EXAMEN OCULAR COMPLETO
+            else if (motivoConsulta == "exámen ocular completo")
+            {
+                if (tipoUsuario == "O") // 👓 Optometrista
+                {
+                    HabilitarControlesMedidaVista(true);
+                    HabilitarControlesOftalmologo(false);
+                    HabilitarControlesRetinologo(false);
+                }
+                else if (tipoUsuario == "F") // 👁 Oftalmólogo
+                {
+                    HabilitarControlesMedidaVista(false);
+                    HabilitarControlesOftalmologo(true);
+                    HabilitarControlesRetinologo(false);
+                }
+                else if (tipoUsuario == "R") // 🔬 Retinólogo
+                {
+                    HabilitarControlesMedidaVista(false);
+                    HabilitarControlesOftalmologo(false);
+                    HabilitarControlesRetinologo(true);
+
+                }else if(tipoUsuario=="S")
+                {
+                    HabilitarControlesMedidaVista(true);
+                    HabilitarControlesOftalmologo(true);
+                    HabilitarControlesRetinologo(true);
+                }
+            }
+
+            else
+            {
+                // 🔸 Motivo no reconocido → bloquear todo
+                HabilitarControlesMedidaVista(false);
+                HabilitarControlesOftalmologo(false);
+                HabilitarControlesRetinologo(false);
+            }
+        }
+
+
+        private void HabilitarControlesMedidaVista(bool habilitar)
+        {
+            string[] controles = {
+        "txtLEJOSODEsferico","txtLEJOSODCilindrico","txtLEJOSODEje","txtLEJOSODDIP","txtLEJOSODAgudezaVisual",
+        "txtLEJOSOIEsferico","txtLEJOSOICilindrico","txtLEJOSOIEje","txtLEJOSOIDIP","txtLEJOSOIAgudezaVisual",
+        "txtCERCAODEsferico","txtCERCAODCilindrico","txtCERCAODEje","txtCERCAODDIP","txtCERCAODAgudezaVisual",
+        "txtCERCAOIEsferico","txtCERCAOICilindrico","txtCERCAOIEje","txtCERCAOIDIP","txtCERCAOIAgudezaVisual",
+        "txtObservaciones1",
+        "lblNombreArchivo", // Label del PDF
+        "btnSubirPDF"       // Botón de subir PDF
+    };
+
+            foreach (string nombre in controles)
+            {
+                Control[] encontrados = this.Controls.Find(nombre, true);
+                if (encontrados.Length == 0) continue;
+
+                Control ctrl = encontrados[0];
+
+                if (ctrl is TextBox txt)
+                {
+                    txt.ReadOnly = !habilitar;
+                }
+                else if (ctrl is Label lbl && nombre == "lblNombreArchivo")
+                {
+                    lbl.Enabled = habilitar;
+                    lbl.ForeColor = habilitar ? Color.Black : Color.Gray;
+                }
+                else if (ctrl is Button btn && nombre == "btnSubirPDF")
+                {
+                    btn.Enabled = habilitar;
+                    btn.Visible = true; // opcional: siempre visible
+                }
+            }
+        }
+
+        private void HabilitarControlesOftalmologo(bool habilitar)
+        {
+            string[] controles = {
+        "txtSignosSintomas1",
+        "txtExamenOftalmologico",
+        "panelOjoDerecho",
+        "panelOjoIzquierdo"
+    };
+
+            foreach (string nombre in controles)
+            {
+                Control[] encontrados = this.Controls.Find(nombre, true);
+                if (encontrados.Length == 0) continue;
+
+                if (encontrados[0] is TextBox txt)
+                    txt.ReadOnly = !habilitar;
+                else if (encontrados[0] is FlowLayoutPanel panel)
+                    panel.Enabled = habilitar;
+            }
+        }
+
+        private void HabilitarControlesRetinologo(bool habilitar)
+        {
+            /// Controles fuera de la tabla
+            string[] controlesExternos = {
+        "txtObservacionesDiagnostico",
+        "txtTratamiento1",
+        "lblNombreArchivo",
+        "btnSubirPDF"
+    };
+
+            foreach (string nombre in controlesExternos)
+            {
+                Control[] encontrados = this.Controls.Find(nombre, true);
+                if (encontrados.Length == 0) continue;
+
+                Control ctrl = encontrados[0];
+
+                if (ctrl is TextBox txt) txt.ReadOnly = !habilitar;
+                else if (ctrl is Label lbl && nombre == "lblNombreArchivo")
+                {
+                    lbl.Enabled = habilitar;
+                    lbl.ForeColor = habilitar ? Color.Black : Color.Gray;
+                }
+                else if (ctrl is Button btn && nombre == "btnSubirPDF") btn.Enabled = habilitar;
+            }
+
+            // Controles dentro de la tabla
+            if (tablaDiagnostico != null)
+            {
+                foreach (Control c in tablaDiagnostico.Controls)
+                {
+                    if (c is TextBox txt)
+                    {
+                        txt.ReadOnly = !habilitar; // habilita/deshabilita TextBox
+                    }
+                    else if (c is DateTimePicker dtp)
+                    {
+                        dtp.Enabled = habilitar; // habilita/deshabilita DateTimePicker
+                    }
+                }
+            }
+        }
+
+        private void CargarDatosExamenOcularCompleto()
+        {
+            using (SqlConnection cn = conexionBD.Conectar())
+            {
+                string sql = @"
+SELECT 
+    Nombre_optometra,
+    Nombre_oftalmologo,
+    Nombre_retinologo,
+    Lejos_OD_Esferico, Lejos_OD_Cilindrico, Lejos_OD_EJE, Lejos_OD_DIP, Lejos_OD_AV,
+    Lejos_OI_Esferico, Lejos_OI_Cilindrico, Lejos_OI_EJE, Lejos_OI_DIP, Lejos_OI_AV,
+    Cerca_OD_Esferico, Cerca_OD_Cilindrico, Cerca_OD_EJE, Cerca_OD_DIP, Cerca_OD_AV,
+    Cerca_OI_Esferico, Cerca_OI_Cilindrico, Cerca_OI_EJE, Cerca_OI_DIP, Cerca_OI_AV,
+    Observaciones,
+    SignosSintomas, ExamenOftamologico, OjoDerecho, OjoIzquierdo,
+    Diagnostico, AV_SC_OD, AV_SC_OI, AV_CC_OD, AV_CC_OI, PIO_OD, PIO_OI,
+    Fecha_Diagnostico, Hora_Inicio, Hora_Termino, Tratamiento, NombreArchivo, Archivo
+FROM HistorialClinicoBD
+WHERE Id = @Id";
+
+                SqlCommand cmd = new SqlCommand(sql, cn);
+                cmd.Parameters.AddWithValue("@Id", idHistorial);
+                cn.Open();
+
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    if (dr.Read())
+                    {
+                        // ==== CARGAR NOMBRES DE LOS DOCTORES ====
+                        if (!dr.IsDBNull(dr.GetOrdinal("Nombre_optometra")))
+                        {
+                            Control[] ctrlOpt = this.Controls.Find("txtOptometro", true);
+                            if (ctrlOpt.Length > 0 && ctrlOpt[0] is TextBox txt)
+                                txt.Text = dr["Nombre_optometra"].ToString();
+                        }
+
+                        if (!dr.IsDBNull(dr.GetOrdinal("Nombre_oftalmologo")))
+                        {
+                            Control[] ctrlOft = this.Controls.Find("txtDoctorExamenOftalmologico", true);
+                            if (ctrlOft.Length > 0 && ctrlOft[0] is TextBox txt)
+                                txt.Text = dr["Nombre_oftalmologo"].ToString();
+                        }
+
+                        if (!dr.IsDBNull(dr.GetOrdinal("Nombre_retinologo")))
+                        {
+                            Control[] ctrlRet = this.Controls.Find("txtDoctorDiagnostico", true);
+                            if (ctrlRet.Length > 0 && ctrlRet[0] is TextBox txt)
+                                txt.Text = dr["Nombre_retinologo"].ToString();
+                        }
+
+                        // ==== CARGAR CAMPOS DE CADA SECCIÓN ====
+                        CargarCamposOptometra(dr);
+                        CargarCamposOftalmologo(dr);
+                        CargarCamposRetinologo(dr);
+                    }
+                }
+            }
+        }
+
+        
+        private void CargarCamposOptometra(SqlDataReader dr)
+        {
+            string[] campos = {"Nombre_optometra",
+        "Lejos_OD_Esferico","Lejos_OD_Cilindrico","Lejos_OD_EJE","Lejos_OD_DIP","Lejos_OD_AV",
+        "Lejos_OI_Esferico","Lejos_OI_Cilindrico","Lejos_OI_EJE","Lejos_OI_DIP","Lejos_OI_AV",
+        "Cerca_OD_Esferico","Cerca_OD_Cilindrico","Cerca_OD_EJE","Cerca_OD_DIP","Cerca_OD_AV",
+        "Cerca_OI_Esferico","Cerca_OI_Cilindrico","Cerca_OI_EJE","Cerca_OI_DIP","Cerca_OI_AV",
+        "Observaciones"
+    };
+
+            foreach (var campo in campos)
+            {
+                if (dr[campo] != DBNull.Value)
+                {
+                    Control[] encontrados = this.Controls.Find(mapaColumnas.FirstOrDefault(x => x.Value == campo).Key, true);
+                    if (encontrados.Length > 0 && encontrados[0] is TextBox txt)
+                        txt.Text = dr[campo].ToString();
+                }
+            }
+        }
+
+        private void CargarCamposOftalmologo(SqlDataReader dr)
+        {
+            if (dr["SignosSintomas"] != DBNull.Value)
+            {
+                Control[] c = this.Controls.Find("txtSignosSintomas1", true);
+                if (c.Length > 0 && c[0] is TextBox txt)
+                    txt.Text = dr["SignosSintomas"].ToString();
+            }
+
+            if (dr["ExamenOftamologico"] != DBNull.Value)
+            {
+                Control[] c = this.Controls.Find("txtExamenOftalmologico", true);
+                if (c.Length > 0 && c[0] is TextBox txt)
+                    txt.Text = dr["ExamenOftamologico"].ToString();
+            }
+
+            // === Imagen Ojo Derecho ===
+            if (dr["OjoDerecho"] != DBNull.Value)
+            {
+                Control[] panelOD = this.Controls.Find("panelOjoDerecho", true);
+                if (panelOD.Length > 0 && panelOD[0] is FlowLayoutPanel panel)
+                {
+                    PictureBox pic = panel.Controls.OfType<PictureBox>().FirstOrDefault();
+                    if (pic != null)
+                    {
+                        byte[] data = (byte[])dr["OjoDerecho"];
+                        using (MemoryStream ms = new MemoryStream(data))
+                            pic.Image = Image.FromStream(ms);
+                    }
+                }
+            }
+
+            // === Imagen Ojo Izquierdo ===
+            if (dr["OjoIzquierdo"] != DBNull.Value)
+            {
+                Control[] panelOI = this.Controls.Find("panelOjoIzquierdo", true);
+                if (panelOI.Length > 0 && panelOI[0] is FlowLayoutPanel panel)
+                {
+                    PictureBox pic = panel.Controls.OfType<PictureBox>().FirstOrDefault();
+                    if (pic != null)
+                    {
+                        byte[] data = (byte[])dr["OjoIzquierdo"];
+                        using (MemoryStream ms = new MemoryStream(data))
+                            pic.Image = Image.FromStream(ms);
+                    }
+                }
+            }
+        }
+
+        private void CargarCamposRetinologo(SqlDataReader dr)
+        {
+            // Nombre del retinólogo
+            if (dr["Nombre_retinologo"] != DBNull.Value)
+                ((TextBox)this.Controls.Find("txtDoctorDiagnostico", true)[0]).Text = dr["Nombre_retinologo"].ToString();
+
+            // Diagnóstico
+            if (dr["Diagnostico"] != DBNull.Value)
+                ((TextBox)this.Controls.Find("txtObservacionesDiagnostico", true)[0]).Text = dr["Diagnostico"].ToString();
+
+            var controles = tablaDiagnostico.Controls.Find("txtAVSC_OD", true);
+            if (controles.Length > 0 && dr["AV_SC_OD"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_SC_OD"].ToString();
+
+            controles = tablaDiagnostico.Controls.Find("txtAVSC_OI", true);
+            if (controles.Length > 0 && dr["AV_SC_OI"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_SC_OI"].ToString();
+
+            // AV.CC.
+            controles = tablaDiagnostico.Controls.Find("txtAVCC_OD", true);
+            if (controles.Length > 0 && dr["AV_CC_OD"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_CC_OD"].ToString();
+
+            controles = tablaDiagnostico.Controls.Find("txtAVCC_OI", true);
+            if (controles.Length > 0 && dr["AV_CC_OI"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_CC_OI"].ToString();
+
+            // PIO/ICARE
+            controles = tablaDiagnostico.Controls.Find("txtPIOICARE_OD", true);
+            if (controles.Length > 0 && dr["PIO_OD"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["PIO_OD"].ToString();
+
+            controles = tablaDiagnostico.Controls.Find("txtPIOICARE_OI", true);
+            if (controles.Length > 0 && dr["PIO_OI"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["PIO_OI"].ToString();
+
+            // FECHA
+            controles = tablaDiagnostico.Controls.Find("dtpFechaDiagnostico", true);
+            if (controles.Length > 0 && dr["Fecha_Diagnostico"] != DBNull.Value)
+                ((DateTimePicker)controles[0]).Value = Convert.ToDateTime(dr["Fecha_Diagnostico"]);
+
+            // HORA DE INICIO
+            controles = tablaDiagnostico.Controls.Find("dtpHoraInicio", true);
+            if (controles.Length > 0 && dr["Hora_Inicio"] != DBNull.Value)
+                ((DateTimePicker)controles[0]).Value = DateTime.Today.Add(TimeSpan.Parse(dr["Hora_Inicio"].ToString()));
+
+            // HORA DE TÉRMINO
+            controles = tablaDiagnostico.Controls.Find("dtpHoraTermino", true);
+            if (controles.Length > 0 && dr["Hora_Termino"] != DBNull.Value)
+                ((DateTimePicker)controles[0]).Value = DateTime.Today.Add(TimeSpan.Parse(dr["Hora_Termino"].ToString()));
+
+            // Tratamiento
+            if (dr["Tratamiento"] != DBNull.Value)
+                ((TextBox)this.Controls.Find("txtTratamiento1", true)[0]).Text = dr["Tratamiento"].ToString();
+
+            // === 📎 ARCHIVO PDF (label y bytes) ===
+            Control[] ctrlLblArchivo = this.Controls.Find("lblNombreArchivo", true);
+            if (ctrlLblArchivo.Length > 0 && ctrlLblArchivo[0] is Label lblArchivo)
+            {
+                bool tieneColumnaArchivo = false;
+
+                // Verificar si la columna existe (por seguridad)
+                for (int i = 0; i < dr.FieldCount; i++)
+                {
+                    if (string.Equals(dr.GetName(i), "NombreArchivo", StringComparison.OrdinalIgnoreCase))
+                    {
+                        tieneColumnaArchivo = true;
+                        break;
+                    }
+                }
+
+                if (tieneColumnaArchivo && dr["NombreArchivo"] != DBNull.Value)
+                {
+                    lblArchivo.Text = dr["NombreArchivo"].ToString();
+                }
+                else if (dr["Archivo"] != DBNull.Value)
+                {
+                    byte[] archivoBytes = (byte[])dr["Archivo"];
+                    lblArchivo.Text = $"Archivo cargado ({archivoBytes.Length} bytes)";
+                }
+                else
+                {
+                    lblArchivo.Text = string.Empty;
+                }
+            }
+        }
+
+
+        private void EditarPorMotivo(int id)
+        {
+            Control[] encontradosMotivo = this.Controls.Find("cmbMotivoConsulta1", true);
+            if (encontradosMotivo.Length == 0)
+            {
+                MessageBox.Show("No se encontró el campo MotivoConsulta.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string motivo = "";
+
+            if (encontradosMotivo[0] is TextBox txtMotivo)
+            {
+                motivo = txtMotivo.Text.Trim().ToLower();
+            }
+            else if (encontradosMotivo[0] is ComboBox cmbMotivo)
+            {
+                motivo = cmbMotivo.SelectedItem != null ? cmbMotivo.SelectedItem.ToString().Trim().ToLower() : "";
+            }
+
+            if (string.IsNullOrEmpty(motivo))
+            {
+                MessageBox.Show("No se ha seleccionado un motivo de consulta.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (motivo == "medida de la vista")
+            {
+
+                try
+                {
+                    using (SqlConnection cn = conexionBD.Conectar())
+                    {
+                        cn.Open();
+
+                        string query = @"
+                UPDATE HistorialClinicoBD
+                SET 
+                    Lejos_OD_Esferico = @Lejos_OD_Esferico,
+                    Lejos_OD_Cilindrico = @Lejos_OD_Cilindrico,
+                    Lejos_OD_EJE = @Lejos_OD_EJE,
+                    Lejos_OD_DIP = @Lejos_OD_DIP,
+                    Lejos_OD_AV = @Lejos_OD_AV,
+                    Lejos_OI_Esferico = @Lejos_OI_Esferico,
+                    Lejos_OI_Cilindrico = @Lejos_OI_Cilindrico,
+                    Lejos_OI_EJE = @Lejos_OI_EJE,
+                    Lejos_OI_DIP = @Lejos_OI_DIP,
+                    Lejos_OI_AV = @Lejos_OI_AV,
+                    Cerca_OD_Esferico = @Cerca_OD_Esferico,
+                    Cerca_OD_Cilindrico = @Cerca_OD_Cilindrico,
+                    Cerca_OD_EJE = @Cerca_OD_EJE,
+                    Cerca_OD_DIP = @Cerca_OD_DIP,
+                    Cerca_OD_AV = @Cerca_OD_AV,
+                    Cerca_OI_Esferico = @Cerca_OI_Esferico,
+                    Cerca_OI_Cilindrico = @Cerca_OI_Cilindrico,
+                    Cerca_OI_EJE = @Cerca_OI_EJE,
+                    Cerca_OI_DIP = @Cerca_OI_DIP,
+                    Cerca_OI_AV = @Cerca_OI_AV,
+                    Observaciones = @Observaciones,
+                    NombreArchivo=@NombreArchivo,
+                    Archivo=@Archivo
+                WHERE Id = @Id";
+
+                        using (SqlCommand cmd = new SqlCommand(query, cn))
+                        {
+                            var tabla = this.Controls.Find("tblCorrectores", true).FirstOrDefault() as TableLayoutPanel;
+
+                            if (tabla != null)
+                            {
+                                cmd.Parameters.AddWithValue("@Lejos_OD_Esferico", GetDecimalFromTextBox(tabla, "txtLEJOSODEsferico"));
+                                cmd.Parameters.AddWithValue("@Lejos_OD_Cilindrico", GetDecimalFromTextBox(tabla, "txtLEJOSODCilindrico"));
+                                cmd.Parameters.AddWithValue("@Lejos_OD_EJE", GetDecimalFromTextBox(tabla, "txtLEJOSODEje"));
+                                cmd.Parameters.AddWithValue("@Lejos_OD_DIP", GetDecimalFromTextBox(tabla, "txtLEJOSODDIP"));
+                                cmd.Parameters.AddWithValue("@Lejos_OD_AV", GetDecimalFromTextBox(tabla, "txtLEJOSODAgudezaVisual"));
+
+                                cmd.Parameters.AddWithValue("@Lejos_OI_Esferico", GetDecimalFromTextBox(tabla, "txtLEJOSOIEsferico"));
+                                cmd.Parameters.AddWithValue("@Lejos_OI_Cilindrico", GetDecimalFromTextBox(tabla, "txtLEJOSOICilindrico"));
+                                cmd.Parameters.AddWithValue("@Lejos_OI_EJE", GetDecimalFromTextBox(tabla, "txtLEJOSOIEje"));
+                                cmd.Parameters.AddWithValue("@Lejos_OI_DIP", GetDecimalFromTextBox(tabla, "txtLEJOSOIDIP"));
+                                cmd.Parameters.AddWithValue("@Lejos_OI_AV", GetDecimalFromTextBox(tabla, "txtLEJOSOIAgudezaVisual"));
+
+                                cmd.Parameters.AddWithValue("@Cerca_OD_Esferico", GetDecimalFromTextBox(tabla, "txtCERCAODEsferico"));
+                                cmd.Parameters.AddWithValue("@Cerca_OD_Cilindrico", GetDecimalFromTextBox(tabla, "txtCERCAODCilindrico"));
+                                cmd.Parameters.AddWithValue("@Cerca_OD_EJE", GetDecimalFromTextBox(tabla, "txtCERCAODEje"));
+                                cmd.Parameters.AddWithValue("@Cerca_OD_DIP", GetDecimalFromTextBox(tabla, "txtCERCAODDIP"));
+                                cmd.Parameters.AddWithValue("@Cerca_OD_AV", GetDecimalFromTextBox(tabla, "txtCERCAODAgudezaVisual"));
+
+                                cmd.Parameters.AddWithValue("@Cerca_OI_Esferico", GetDecimalFromTextBox(tabla, "txtCERCAOIEsferico"));
+                                cmd.Parameters.AddWithValue("@Cerca_OI_Cilindrico", GetDecimalFromTextBox(tabla, "txtCERCAOICilindrico"));
+                                cmd.Parameters.AddWithValue("@Cerca_OI_EJE", GetDecimalFromTextBox(tabla, "txtCERCAOIEje"));
+                                cmd.Parameters.AddWithValue("@Cerca_OI_DIP", GetDecimalFromTextBox(tabla, "txtCERCAOIDIP"));
+                                cmd.Parameters.AddWithValue("@Cerca_OI_AV", GetDecimalFromTextBox(tabla, "txtCERCAOIAgudezaVisual"));
+
+                                                               
+                            }
+
+                            cmd.Parameters.AddWithValue("@Id", id);
+
+                            cmd.ExecuteNonQuery();
+                            MessageBox.Show("Medida de la vista actualizada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al actualizar la medida de la vista: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+            }
+            else if(motivo== "consulta oftalmológica")
+            {
+
+            }else if(motivo== "consulta con retinólogo")
+            {
+
+            }else if(motivo== "exámen ocular completo")
+            {
+
+            }else
+            {
+                MessageBox.Show("Error al editar No se encontro el motivo de consulta");
+            }
+        }
+        private decimal GetDecimalFromTextBox(TableLayoutPanel tabla, string nombre)
+        {
+            var controles = tabla.Controls.Find(nombre, true);
+            if (controles.Length > 0 && decimal.TryParse(((TextBox)controles[0]).Text, out decimal valor))
+                return valor;
+            return 0m;
+        }
     }
+
+
+
 }

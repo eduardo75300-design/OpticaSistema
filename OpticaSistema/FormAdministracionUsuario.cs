@@ -19,15 +19,14 @@ namespace OpticaSistema
         private DataGridView tablaUsuarios;
         private Panel panelRegistro;
         private TextBox txtNombre, txtApellido, txtDni, txtCorreo, txtClave, txtTipoUsuario, txtDireccion, txtCelular;
-        private Button btnGuardar, btnCancelar, btnLimpiarFirma;
+        private Button btnGuardar, btnCancelar;
         private bool modoEdicion = false;
         private string dniEditando = "";
         private ComboBox cmbSexo;
         private ComboBox cmbTipoUsuario;
         private Label lblTituloRegistro;
         private CheckBox chkEstado;
-        private PictureBox pbFirma;
-        private Button btnCargarFirma;
+
 
         Dictionary<string, string> sexoOpciones = new Dictionary<string, string>
             {
@@ -243,60 +242,8 @@ namespace OpticaSistema
             };
             cmbTipoUsuario.Items.AddRange(tipoUsuarioOpciones.Keys.ToArray());
             cmbTipoUsuario.SelectedIndex = 0;
-            pbFirma = new PictureBox
-            {
-                Size = new Size(250, 150),
-                BorderStyle = BorderStyle.FixedSingle,
-                SizeMode = PictureBoxSizeMode.StretchImage,
-                Margin = new Padding(0, 12, 0, 0)
-            };
-
-            btnCargarFirma = new Button
-            {
-                Text = "Cargar Firma",
-                Size = new Size(200, 40),
-                Font = campoFont,
-                Margin = new Padding(0, 0, 8, 0) // espacio a la derecha
-            };
-
-            // Botón limpiar firma
-            btnLimpiarFirma = new Button
-            {
-                Text = "Limpiar Firma",
-                Size = new Size(200, 40),
-                Font = campoFont,
-                BackColor = Color.SteelBlue,
-                Margin = new Padding(0, 0, 0, 0)
-            };
-
-            // Panel horizontal
-            FlowLayoutPanel panelBotonesFirma = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                WrapContents = false,
-                Margin = new Padding(0, 8, 0, 10),
-                Dock = DockStyle.None,
-                Padding = new Padding(0),
-            };
-
-            // 👉 Ahora sí los agregamos
-            panelBotonesFirma.Controls.Add(btnCargarFirma);
-            panelBotonesFirma.Controls.Add(btnLimpiarFirma);
-
-
-            btnCargarFirma.Click += (s, e) =>
-            {
-                using (OpenFileDialog ofd = new OpenFileDialog())
-                {
-                    ofd.Filter = "Archivos de imagen|*.jpg;*.png;*.bmp";
-                    if (ofd.ShowDialog() == DialogResult.OK)
-                    {
-                        pbFirma.Image = Image.FromFile(ofd.FileName);
-                    }
-                }
-            };
+            
+                
             btnLimpiar.Click += (s, e) =>
             {
                 CargarUsuarios();
@@ -380,9 +327,6 @@ namespace OpticaSistema
             contenedor.Controls.Add(CrearTitulo("Tipo de Usuario"));
             contenedor.Controls.Add(cmbTipoUsuario);
             contenedor.Controls.Add(chkEstado);
-            contenedor.Controls.Add(CrearTitulo("Firma"));
-            contenedor.Controls.Add(pbFirma);
-            contenedor.Controls.Add(panelBotonesFirma);
 
             // Contenedor de botones
             FlowLayoutPanel botones = new FlowLayoutPanel();
@@ -447,10 +391,7 @@ namespace OpticaSistema
 
             };
 
-            btnLimpiarFirma.Click += (s, e) =>
-            {
-                pbFirma.Image = null; // limpia la firma
-            };
+            
             btnGuardar.Click += (s, e) =>
             {
                 string sexoSeleccionado = cmbSexo.SelectedItem?.ToString();
@@ -489,15 +430,6 @@ namespace OpticaSistema
                     return;
                 }
 
-                byte[] firmaBytes = null;
-                if (pbFirma.Image != null)
-                {
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        pbFirma.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                        firmaBytes = ms.ToArray();
-                    }
-                }
                 using (SqlConnection cn = conexionBD.Conectar())
                 {
                     try
@@ -521,7 +453,7 @@ namespace OpticaSistema
 
 
                             // Actualizar usuario existente
-                            string query = @"UPDATE UsuarioBD SET Nombres = @nombres, Apellidos = @apellidos, Contraseña = @clave, Correo = @correo, Direccion = @direccion, Celular = @celular, Sexo = @sexo, TipoUsuario = @tipo, Estado = @estado, Firma = @firma, Dni = @dniNuevo WHERE Dni = @dni";
+                            string query = @"UPDATE UsuarioBD SET Nombres = @nombres, Apellidos = @apellidos, Contraseña = @clave, Correo = @correo, Direccion = @direccion, Celular = @celular, Sexo = @sexo, TipoUsuario = @tipo, Estado = @estado, Dni = @dniNuevo WHERE Dni = @dni";
 
                             SqlCommand cmd = new SqlCommand(query, cn);
                             cmd.Parameters.AddWithValue("@nombres", txtNombre.Text.Trim());
@@ -533,9 +465,6 @@ namespace OpticaSistema
                             cmd.Parameters.AddWithValue("@sexo", sexoOpciones[sexoSeleccionado]);
                             cmd.Parameters.AddWithValue("@tipo", tipoUsuarioOpciones[tipoSeleccionado]);
                             cmd.Parameters.AddWithValue("@estado", chkEstado.Checked);
-                            SqlParameter firmaParam = new SqlParameter("@firma", SqlDbType.VarBinary);
-                            firmaParam.Value = (object)firmaBytes ?? DBNull.Value;
-                            cmd.Parameters.Add(firmaParam);
                             cmd.Parameters.AddWithValue("@dni", dniEditando);
                             cmd.Parameters.AddWithValue("@dniNuevo", txtDni.Text.Trim());
                             cmd.ExecuteNonQuery();
@@ -557,7 +486,7 @@ namespace OpticaSistema
                                 return;
                             }
                             // Insertar nuevo usuario con Estado y Firma
-                            string query = @"INSERT INTO UsuarioBD (Nombres, Apellidos, Contraseña, Dni, Correo, Direccion, Sexo, TipoUsuario, Celular, Estado, Firma) VALUES (@nombres, @apellidos, @clave, @dni, @correo, @direccion, @sexo, @tipo, @celular, @estado, @firma)";
+                            string query = @"INSERT INTO UsuarioBD (Nombres, Apellidos, Contraseña, Dni, Correo, Direccion, Sexo, TipoUsuario, Celular, Estado) VALUES (@nombres, @apellidos, @clave, @dni, @correo, @direccion, @sexo, @tipo, @celular, @estado)";
 
                             SqlCommand cmd = new SqlCommand(query, cn);
                             cmd.Parameters.AddWithValue("@nombres", txtNombre.Text.Trim());
@@ -570,9 +499,7 @@ namespace OpticaSistema
                             cmd.Parameters.AddWithValue("@sexo", sexoOpciones[sexoSeleccionado]);
                             cmd.Parameters.AddWithValue("@estado", true);
                             cmd.Parameters.AddWithValue("@tipo", tipoUsuarioOpciones[tipoSeleccionado]);
-                            SqlParameter firmaParam = new SqlParameter("@firma", SqlDbType.VarBinary);
-                            firmaParam.Value = (object)firmaBytes ?? DBNull.Value;
-                            cmd.Parameters.Add(firmaParam);
+
 
 
                             cmd.ExecuteNonQuery();
@@ -794,22 +721,7 @@ namespace OpticaSistema
                             cmbSexo.SelectedItem = cmbSexo.Items.Contains(sexoTexto) ? sexoTexto : "Ingresar sexo";
                             cmbTipoUsuario.SelectedItem = cmbTipoUsuario.Items.Contains(tipoTexto) ? tipoTexto : "Ingresar tipo de usuario";
                             cmd.Parameters.AddWithValue("@Estado", true);
-                            chkEstado.Visible = false;
-
-
-                            // Cargar firma si existe
-                            if (reader["Firma"] != DBNull.Value)
-                            {
-                                byte[] firmaBytes = (byte[])reader["Firma"];
-                                using (MemoryStream ms = new MemoryStream(firmaBytes))
-                                {
-                                    pbFirma.Image = Image.FromStream(ms);
-                                }
-                            }
-                            else
-                            {
-                                pbFirma.Image = null;
-                            }
+                            chkEstado.Visible = false;       
 
                             lblTituloRegistro.Text = "Editar usuario";
                             modoEdicion = true;
@@ -847,7 +759,6 @@ namespace OpticaSistema
             txtDireccion.Text = string.Empty;
             txtCelular.Text = string.Empty;
             chkEstado.Checked = true; // Estado por defecto activo
-            pbFirma.Image = null;
             cmbSexo.SelectedIndex = 0;
             cmbTipoUsuario.SelectedIndex = 0;
 

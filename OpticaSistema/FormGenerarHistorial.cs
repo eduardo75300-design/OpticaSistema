@@ -243,7 +243,7 @@ namespace OpticaSistema
 
             // Botón REGISTRAR
             Button btnRegistrar = new Button();
-            btnRegistrar.Text = "REGISTRAR";
+            btnRegistrar.Text = "GENERAR";
             btnRegistrar.Font = new Font("Segoe UI", 12, FontStyle.Bold);
             btnRegistrar.Width = 200;
             btnRegistrar.Height = 45;
@@ -373,7 +373,7 @@ VALUES (
 
                         SqlCommand cmdInsert = new SqlCommand(queryInsert, cn);
                         DateTime ahora = DateTime.Now;
-                        int estadoHistorialTurno = ahora.Hour < 12 ? 1 : 0;
+                        int estadoHistorialTurno = ahora.Hour < 14 ? 1 : 0;
 
                         cmdInsert.Parameters.AddWithValue("@idPaciente", idPaciente);
                         cmdInsert.Parameters.AddWithValue("@fechaConsulta", ahora);
@@ -385,7 +385,7 @@ VALUES (
 
                         if (filas > 0)
                         {
-                            MessageBox.Show("Historial clínico registrado correctamente.");
+                            MessageBox.Show("Historial clínico generado correctamente.");
                         }
                         else
                         {
