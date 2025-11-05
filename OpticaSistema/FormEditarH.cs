@@ -1629,6 +1629,7 @@ WHERE Id = @Id";
                             MessageBox.Show("Medida de la vista actualizada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
+
                 }
                 catch (Exception ex)
                 {

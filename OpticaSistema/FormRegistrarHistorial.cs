@@ -13,6 +13,7 @@ namespace OpticaSistema
 {
     public partial class FormRegistrarHistorial : Form
     {
+        private Dictionary<string, string> datosPacienteBD = new Dictionary<string, string>();
         private ConexionDB conexionBD;
         private FlowLayoutPanel panelHorizontal;
         byte[] archivoPDF = null;
@@ -25,7 +26,7 @@ namespace OpticaSistema
             this.WindowState = FormWindowState.Maximized;
             this.BackColor = Color.White;
             conexionBD = new ConexionDB();
-
+            string rutaPDFSeleccionado = null;
 
             TableLayoutPanel layout = new TableLayoutPanel();
             layout.Dock = DockStyle.Fill;
@@ -374,9 +375,9 @@ namespace OpticaSistema
                         try
                         {
                             archivoPDF = File.ReadAllBytes(rutaPDF);
-                            nombreArchivo = nombreArchivoPDF;
+                            rutaPDFSeleccionado = rutaPDF; // ✅ guarda la ruta completa
+                            nombreArchivo = nombreArchivoPDF; // ✅ guarda solo el nombre
 
-                            // ✅ Actualizar el label con el nombre del archivo
                             lblNombreArchivo.Text = nombreArchivoPDF;
                             lblNombreArchivo.Font = new Font("Segoe UI", 10, FontStyle.Regular);
                             lblNombreArchivo.ForeColor = Color.Black;
@@ -389,7 +390,9 @@ namespace OpticaSistema
                             MessageBox.Show("Error al leer el archivo: " + ex.Message, "Error",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                             archivoPDF = null;
+                            rutaPDFSeleccionado = null;
                             nombreArchivo = null;
+
                             lblNombreArchivo.Text = "Ningún archivo seleccionado";
                             lblNombreArchivo.Font = new Font("Segoe UI", 10, FontStyle.Italic);
                             lblNombreArchivo.ForeColor = Color.DimGray;
@@ -583,7 +586,8 @@ INSERT INTO HistorialClinicoBD
     Observaciones,
     Nombre_oftalmologo, SignosSintomas, ExamenOftamologico, OjoDerecho, OjoIzquierdo,
     Nombre_retinologo, Diagnostico, AV_SC_OD, AV_SC_OI, AV_CC_OD, AV_CC_OI,
-    PIO_OD, PIO_OI, Fecha_Diagnostico, Hora_Inicio, Hora_Termino, Tratamiento, NombreArchivo, Archivo
+    PIO_OD, PIO_OI, Fecha_Diagnostico, Hora_Inicio, Hora_Termino, 
+    Tratamiento, NombreArchivo, Archivo, PDFHistorialClinico
 )
 VALUES
 (
@@ -595,7 +599,8 @@ VALUES
     @Observaciones,
     @Nombre_oftalmologo, @SignosSintomas, @ExamenOftamologico, @OjoDerecho, @OjoIzquierdo,
     @Nombre_retinologo, @Diagnostico, @AV_SC_OD, @AV_SC_OI, @AV_CC_OD, @AV_CC_OI,
-    @PIO_OD, @PIO_OI, @Fecha_Diagnostico, @Hora_Inicio, @Hora_Termino, @Tratamiento, @NombreArchivo, @Archivo
+    @PIO_OD, @PIO_OI, @Fecha_Diagnostico, @Hora_Inicio, @Hora_Termino, 
+    @Tratamiento, @NombreArchivo, @Archivo, @PDFHistorialClinico
 )";
 
                         using (SqlCommand cmd = new SqlCommand(sqlInsert, cn))
@@ -666,6 +671,118 @@ VALUES
                             else
                                 cmd.Parameters.Add("@Archivo", SqlDbType.VarBinary).Value = DBNull.Value;
 
+
+
+
+
+                            // ======================= NUEVA SECCIÓN ==========================
+                            string signosSintomas = GetTextBoxValue("txtSignosSintomas1")?.ToString() ?? "";
+                            string drexamenOftalmologico = GetTextBoxValue("txtDoctorExamenOftalmologico")?.ToString() ?? "";
+                            string examenOftalmologico = GetTextBoxValue("txtExamenOftalmologico")?.ToString() ?? "";
+                            string tratamiento = GetTextBoxValue("txtTratamiento1")?.ToString() ?? "";
+                            string observaciones = GetTextBoxValue("txtObservaciones1")?.ToString() ?? "";
+                            string observacionesdiagnostico = GetTextBoxValue("txtObservacionesDiagnostico")?.ToString() ?? "";
+                            string optometra = GetTextBoxValue("txtOptometro")?.ToString() ?? "";
+                            string doctorDiagnostico = GetTextBoxValue("txtDoctorDiagnostico")?.ToString() ?? "";
+
+                            // Captura los dibujos de los ojos (si existen)
+                            Bitmap dibujoOjoDerecho = ObtenerImagenDesdePanel("panelOjoDerecho");
+                            Bitmap dibujoOjoIzquierdo = ObtenerImagenDesdePanel("panelOjoIzquierdo");
+
+                            // ==== DATOS PRINCIPALES ====
+                            var datos = new
+                            {
+                                Dni = datosPacienteBD.ContainsKey("Dni") ? datosPacienteBD["Dni"] : "",
+                                Apellidos = datosPacienteBD.ContainsKey("Apellidos") ? datosPacienteBD["Apellidos"] : "",
+                                Nombres = datosPacienteBD.ContainsKey("Nombres") ? datosPacienteBD["Nombres"] : "",
+                                FechaConsulta = fechaConsulta.ToShortDateString(),
+                                MotivoConsulta = motivoConsulta,
+                                ObservacionesDiagnostico = observacionesdiagnostico,
+                                Observaciones = observaciones,
+                                DRExamenOftalmologico = drexamenOftalmologico,
+                                ExamenOftalmologico = examenOftalmologico,
+                                SignosSintomas = signosSintomas,
+                                Tratamiento = tratamiento,
+                                Optometro = optometra,
+                                DoctorDiagnostico = doctorDiagnostico,
+                            };
+
+                            // ==== RECETA VISUAL ====
+                            Dictionary<string, string> recetaVisual = new Dictionary<string, string>();
+                            string[] ojos = { "OD", "OI" };
+                            string[] tipos = { "LEJOS", "CERCA" };
+                            string[] campos = { "Esferico", "Cilindrico", "Eje", "DIP", "AgudezaVisual" };
+
+                            foreach (var tipo in tipos)
+                            {
+                                foreach (var ojo in ojos)
+                                {
+                                    foreach (var campo in campos)
+                                    {
+                                        string nombre = $"txt{tipo}{ojo}{campo}";
+                                        recetaVisual[$"{tipo}_{ojo}_{campo}"] = GetTextBoxValue(nombre)?.ToString() ?? "";
+                                    }
+                                }
+                            }
+
+                            Dictionary<string, string> datosDiagnostico = new Dictionary<string, string>();
+
+                            // Estos son los grupos que tienes en tu formulario
+                            string[] diagnosticos = { "AVSC", "AVCC", "PIOICARE" };
+
+                            foreach (string campo in diagnosticos)
+                            {
+                                // Lee los TextBox como los tienes nombrados: txtAVSC_OD, txtAVSC_OI, etc.
+                                string valorOD = GetTextBoxValue($"txt{campo}_OD")?.ToString() ?? "";
+                                string valorOI = GetTextBoxValue($"txt{campo}_OI")?.ToString() ?? "";
+
+                                datosDiagnostico[$"{campo}_OD"] = valorOD;
+                                datosDiagnostico[$"{campo}_OI"] = valorOI;
+                            }
+
+
+                            // Fecha y horas del diagnóstico
+                            var dtpFechaDiag = panelHorizontal.Controls.Find("dtpFechaDiagnostico", true).FirstOrDefault() as DateTimePicker;
+                            if (dtpFechaDiag != null)
+                                datosDiagnostico["FECHA"] = dtpFechaDiag.Value.ToShortDateString();
+
+                            var dtpInicio = panelHorizontal.Controls.Find("dtpHoraInicio", true).FirstOrDefault() as DateTimePicker;
+                            if (dtpInicio != null)
+                                datosDiagnostico["HORA DE INICIO"] = dtpInicio.Value.ToShortTimeString();
+
+                            var dtpFin = panelHorizontal.Controls.Find("dtpHoraTermino", true).FirstOrDefault() as DateTimePicker;
+                            if (dtpFin != null)
+                                datosDiagnostico["HORA DE TÉRMINO"] = dtpFin.Value.ToShortTimeString();
+
+                            // ==== GENERAR LA IMAGEN ====
+                            GenerarImagenConDatos(datos, datosPacienteBD, recetaVisual, datosDiagnostico, dibujoOjoDerecho, dibujoOjoIzquierdo);
+
+                            // ==== CREAR Y UNIR EL PDF FINAL ====
+                            string carpetaDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                            string rutaImagen = Directory.GetFiles(carpetaDocs, $"HistorialClinico_{datos.Dni}_*.png")
+                                                         .OrderByDescending(f => f).FirstOrDefault();
+                            string rutaPDFFinal = Path.Combine(carpetaDocs, $"HistorialClinico_{datos.Dni}_{DateTime.Now:yyyyMMddHHmmss}.pdf");
+
+                            if (!string.IsNullOrEmpty(rutaPDFSeleccionado) && File.Exists(rutaPDFSeleccionado))
+                            {
+                                // ✅ Usa la ruta original del archivo elegido
+                                UnirImagenConPDF(rutaImagen, rutaPDFSeleccionado, rutaPDFFinal);
+
+                                byte[] pdfBytes = File.ReadAllBytes(rutaPDFFinal);
+                                cmd.Parameters.Add("@PDFHistorialClinico", SqlDbType.VarBinary).Value = pdfBytes;
+                            }
+                            else
+                            {
+                                cmd.Parameters.Add("@PDFHistorialClinico", SqlDbType.VarBinary).Value = DBNull.Value;
+                            }
+
+                            //FIN
+
+
+
+
+
+
                             // 🔹 Ejecutar
                             cmd.ExecuteNonQuery();
 
@@ -731,17 +848,22 @@ VALUES
                         // Lista de campos de paciente
                         string[] campos = new string[]
                         {
-                            "Apellidos", "Nombres", "Dni"
+                           "Apellidos", "Nombres", "Dni","Direccion", "Telefono", "Correo", "EstadoCivil",
+        "Celular", "Instruccion", "Dni", "Departamento", "Provincia", "Distrito",
+        "Sexo", "FechaNacimiento", "Edad", "Ocupacion"
                         };
 
-                        // Buscar cada TextBox por su nombre y asignar el valor
-                        foreach (string campo in campos)
+                        datosPacienteBD.Clear();
+                        foreach (string campo in campos.Distinct())
                         {
+                            string valor = row.Table.Columns.Contains(campo) ? row[campo]?.ToString() ?? "" : "";
+                            datosPacienteBD[campo] = valor;
+
+                            // Asignar al TextBox si existe
                             Control[] controles = panelHorizontal.Controls.Find("txt" + campo, true);
                             if (controles.Length > 0 && controles[0] is TextBox txt)
                             {
-                                object valor = row[campo];
-                                txt.Text = valor != null ? valor.ToString() : "";
+                                txt.Text = valor;
                             }
                         }
                     }
@@ -1377,6 +1499,200 @@ VALUES
                     }
                 }
             }
+        }
+
+        /// Integrado
+        private void GenerarImagenConDatos(
+    dynamic datos,
+    Dictionary<string, string> datosPaciente,
+    Dictionary<string, string> recetaVisual,
+    Dictionary<string, string> datosDiagnostico,
+    Bitmap dibujoOjoDerecho,
+    Bitmap dibujoOjoIzquierdo)
+        {
+            string rutaPlantilla = Path.Combine(Application.StartupPath, "Resources", "plantilla_historial.jpg");
+            Bitmap plantilla = new Bitmap(Image.FromFile(rutaPlantilla));
+            Graphics g = Graphics.FromImage(plantilla);
+
+            Font fuente = new Font("Segoe UI", 12, FontStyle.Regular);
+            Font fuente2 = new Font("Segoe UI", 11, FontStyle.Regular);
+            Brush pincel = Brushes.Black;
+
+            // === Datos principales ===
+            g.DrawString(datos.Apellidos, fuente, pincel, new PointF(150, 140));
+            g.DrawString(datos.Nombres, fuente, pincel, new PointF(150, 170));
+            g.DrawString(datos.Dni, fuente, pincel, new PointF(630, 135));
+            g.DrawString(datos.FechaConsulta, fuente, pincel, new PointF(910, 308));
+            g.DrawString(datos.MotivoConsulta, fuente, pincel, new PointF(250, 335));
+            g.DrawString(datos.Tratamiento, fuente, pincel, new PointF(150, 1295));
+
+            g.DrawString(datos.Observaciones, fuente, pincel, new PointF(150, 700));
+            g.DrawString(datos.DRExamenOftalmologico, fuente, pincel, new PointF(265, 972));
+            g.DrawString(datos.ObservacionesDiagnostico, fuente, pincel, new PointF(600, 1147));
+            g.DrawString(datos.Optometro, fuente, pincel, new PointF(450, 335));
+            g.DrawString(datos.SignosSintomas, fuente, pincel, new PointF(150, 845));
+            g.DrawString(datos.ExamenOftalmologico, fuente, pincel, new PointF(150, 990));
+            g.DrawString(datos.DoctorDiagnostico, fuente, pincel, new PointF(200, 1125));
+
+            // === Receta Visual ===
+            Dictionary<string, PointF> posicionesReceta = new Dictionary<string, PointF>
+    {
+        { "LEJOS_OD_Esferico", new PointF(270, 420) },
+        { "LEJOS_OD_Cilindrico", new PointF(420, 420) },
+        { "LEJOS_OD_Eje", new PointF(590, 420) },
+        { "LEJOS_OD_DIP", new PointF(755, 420) },
+        { "LEJOS_OD_AgudezaVisual", new PointF(945, 420) },
+        { "LEJOS_OI_Esferico", new PointF(270, 485) },
+        { "LEJOS_OI_Cilindrico", new PointF(420, 485) },
+        { "LEJOS_OI_Eje", new PointF(590, 485) },
+        { "LEJOS_OI_DIP", new PointF(755, 485) },
+        { "LEJOS_OI_AgudezaVisual", new PointF(945, 485) },
+        { "CERCA_OD_Esferico", new PointF(270, 553) },
+        { "CERCA_OD_Cilindrico", new PointF(420, 553) },
+        { "CERCA_OD_Eje", new PointF(590, 553) },
+        { "CERCA_OD_DIP", new PointF(755, 553) },
+        { "CERCA_OD_AgudezaVisual", new PointF(945, 553) },
+        { "CERCA_OI_Esferico", new PointF(270, 616) },
+        { "CERCA_OI_Cilindrico", new PointF(420, 616) },
+        { "CERCA_OI_Eje", new PointF(590, 616) },
+        { "CERCA_OI_DIP", new PointF(755, 616) },
+        { "CERCA_OI_AgudezaVisual", new PointF(945, 616) }
+    };
+
+            foreach (var kvp in recetaVisual)
+            {
+                if (posicionesReceta.TryGetValue(kvp.Key, out PointF posicion))
+                    g.DrawString(kvp.Value, fuente, pincel, posicion);
+            }
+
+            // === Datos del paciente ===
+            Dictionary<string, PointF> posicionesPaciente = new Dictionary<string, PointF>
+    {
+        { "Direccion", new PointF(150, 200) },
+        { "Telefono", new PointF(150, 230) },
+        { "Correo", new PointF(150, 260) },
+        { "EstadoCivil", new PointF(150, 290) },
+        { "Celular", new PointF(380, 230) },
+        { "Instruccion", new PointF(380, 292) },
+        { "Distrito", new PointF(630, 170) },
+        { "Sexo", new PointF(630, 227) },
+        { "FechaNacimiento", new PointF(630, 260) },
+        { "Edad", new PointF(800, 261) },
+        { "Ocupacion", new PointF(630, 291) }
+    };
+
+            foreach (var kvp in datosPaciente)
+            {
+                if (!string.IsNullOrWhiteSpace(kvp.Value) && posicionesPaciente.TryGetValue(kvp.Key, out PointF posicion))
+                {
+                    string valor = kvp.Value;
+                    if (kvp.Key == "FechaNacimiento" && DateTime.TryParse(valor, out DateTime fecha))
+                        valor = fecha.ToShortDateString();
+
+                    g.DrawString(valor, fuente, pincel, posicion);
+                }
+            }
+
+            // === Diagnóstico ===
+            Dictionary<string, PointF> posicionesDiagnostico = new Dictionary<string, PointF>
+    {
+        { "AVSC_OD", new PointF(250, 1147) },
+        { "AVSC_OI", new PointF(400, 1147) },
+        { "AVCC_OD", new PointF(250, 1167) },
+        { "AVCC_OI", new PointF(400, 1167) },
+        { "PIOICARE_OD", new PointF(250, 1187) },
+        { "PIOICARE_OI", new PointF(400, 1187) },
+        { "FECHA", new PointF(250, 1207) },
+        { "HORA DE INICIO", new PointF(250, 1227) },
+        { "HORA DE TÉRMINO", new PointF(250, 1247) }
+    };
+
+            foreach (var kvp in datosDiagnostico)
+            {
+                if (!string.IsNullOrWhiteSpace(kvp.Value) && posicionesDiagnostico.TryGetValue(kvp.Key, out PointF posicion))
+                    g.DrawString($"{kvp.Key}: {kvp.Value}", fuente2, pincel, posicion);
+            }
+
+            // === Ojos ===
+            Dictionary<string, PointF> posicionesOjos = new Dictionary<string, PointF>
+    {
+        { "OjoDerecho_Titulo", new PointF(680, 840) },
+        { "OjoDerecho_Imagen", new PointF(580, 863) },
+        { "OjoIzquierdo_Titulo", new PointF(800, 840) },
+        { "OjoIzquierdo_Imagen", new PointF(800, 863) }
+    };
+
+            if (dibujoOjoDerecho != null)
+            {
+                g.DrawString("DERECHO", fuente, pincel, posicionesOjos["OjoDerecho_Titulo"]);
+                g.DrawImage(dibujoOjoDerecho, new Rectangle((int)posicionesOjos["OjoDerecho_Imagen"].X, (int)posicionesOjos["OjoDerecho_Imagen"].Y, 240, 120));
+            }
+
+            if (dibujoOjoIzquierdo != null)
+            {
+                g.DrawString("IZQUIERDO", fuente, pincel, posicionesOjos["OjoIzquierdo_Titulo"]);
+                g.DrawImage(dibujoOjoIzquierdo, new Rectangle((int)posicionesOjos["OjoIzquierdo_Imagen"].X, (int)posicionesOjos["OjoIzquierdo_Imagen"].Y, 240, 120));
+            }
+
+            // === Guardar imagen ===
+            string dni = datos.Dni;
+            string fecha2 = datos.FechaConsulta.Replace("/", "-");
+            string nombreImagen = $"HistorialClinico_{dni}_{fecha2}.png";
+            string rutaFinal = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), nombreImagen);
+
+            plantilla.Save(rutaFinal, System.Drawing.Imaging.ImageFormat.Png);
+            MessageBox.Show("Imagen generada correctamente en: " + rutaFinal);
+        }
+
+        private void UnirImagenConPDF(string rutaImagen, string rutaPDFOriginal, string rutaPDFFinal)
+        {
+            using (FileStream stream = new FileStream(rutaPDFFinal, FileMode.Create))
+            {
+                iTextSharp.text.Document documento = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4);
+                iTextSharp.text.pdf.PdfCopy copia = new iTextSharp.text.pdf.PdfCopy(documento, stream);
+                documento.Open();
+
+                // Convertir imagen en PDF temporal
+                using (MemoryStream msImagen = new MemoryStream())
+                {
+                    iTextSharp.text.Document docImagen = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4);
+                    iTextSharp.text.pdf.PdfWriter.GetInstance(docImagen, msImagen);
+                    docImagen.Open();
+
+                    iTextSharp.text.Image imagen = iTextSharp.text.Image.GetInstance(rutaImagen);
+                    imagen.ScaleToFit(iTextSharp.text.PageSize.A4.Width - 40, iTextSharp.text.PageSize.A4.Height - 40);
+                    imagen.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    docImagen.Add(imagen);
+                    docImagen.Close();
+
+                    iTextSharp.text.pdf.PdfReader lectorImagen = new iTextSharp.text.pdf.PdfReader(msImagen.ToArray());
+                    copia.AddPage(copia.GetImportedPage(lectorImagen, 1));
+                    lectorImagen.Close();
+                }
+
+                // Agregar páginas del PDF original
+                iTextSharp.text.pdf.PdfReader lectorOriginal = new iTextSharp.text.pdf.PdfReader(rutaPDFOriginal);
+                for (int i = 1; i <= lectorOriginal.NumberOfPages; i++)
+                {
+                    copia.AddPage(copia.GetImportedPage(lectorOriginal, i));
+                }
+                lectorOriginal.Close();
+
+                documento.Close();
+            }
+        }
+
+
+        private Bitmap ObtenerImagenDesdePanel(string nombrePanel)
+        {
+            Control[] ctrls = panelHorizontal.Controls.Find(nombrePanel, true);
+            if (ctrls.Length > 0 && ctrls[0] is FlowLayoutPanel pnl)
+            {
+                PictureBox pic = pnl.Controls.OfType<PictureBox>().FirstOrDefault();
+                if (pic?.Image != null)
+                    return new Bitmap(pic.Image);
+            }
+            return null;
         }
     }
 }

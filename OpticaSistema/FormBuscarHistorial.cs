@@ -377,7 +377,26 @@ namespace OpticaSistema
                     }
                     else if (header == "VER")
                     {
-                        // Acción VER si aplica
+                        using (SqlConnection cn = conexionBD.Conectar())
+                        {
+                            cn.Open();
+                            string query = "SELECT PDFHistorialClinico FROM HistorialClinicoBD WHERE Id = @Id AND Estado = 1";
+                            using (SqlCommand cmd = new SqlCommand(query, cn))
+                            {
+                                cmd.Parameters.AddWithValue("@Id", idHistorial);
+                                byte[] pdfBytes = cmd.ExecuteScalar() as byte[];
+
+                                if (pdfBytes != null && pdfBytes.Length > 0)
+                                {
+                                    FormVisorPDF visor = new FormVisorPDF(pdfBytes);
+                                    visor.ShowDialog(); // 👈 muestra como ventana modal
+                                }
+                                else
+                                {
+                                    MessageBox.Show("No se encontró el PDF del historial clínico.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                            }
+                        }
                     }
                 }
             };

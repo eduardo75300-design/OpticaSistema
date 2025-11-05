@@ -14,6 +14,7 @@
 	  <None Remove="Imagenes\izquierdo.png" />
 	  <None Remove="Imagenes\log.ico" />
 	  <None Remove="Imagenes\log.png" />
+	  <None Remove="Resources\plantilla_historial.jpg" />
 	</ItemGroup>
 	<ItemGroup>
 	  <Content Include="Imagenes\borrar.png">
@@ -39,9 +40,13 @@
 	  <Content Include="Imagenes\imagen-prueba.png">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
+	  <Content Include="Resources\plantilla_historial.jpg">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="iTextSharp" Version="5.5.13.4" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
 	</ItemGroup>
 </Project>

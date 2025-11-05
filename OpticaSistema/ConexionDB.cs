@@ -24,7 +24,6 @@ namespace OpticaSistema
             }*/
             return con;
         }
-
         
 
 

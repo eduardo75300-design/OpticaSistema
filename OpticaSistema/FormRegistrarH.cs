@@ -1069,9 +1069,6 @@ namespace OpticaSistema
             }
         }
 
-
-
-
         private void CargarDatosExamenOcularCompleto()
         {
             using (SqlConnection cn = conexionBD.Conectar())
@@ -1506,9 +1503,6 @@ WHERE Id = @Id";
 
             return panelReceta;
         }
-
-
-
 
         // Método para crear la tabla de Correctores (la parte más compleja)
         private Control CrearPanelCorrectores()
