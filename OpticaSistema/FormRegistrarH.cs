@@ -17,10 +17,12 @@ namespace OpticaSistema
     public partial class FormRegistrarH : Form
     {
         private int idHistorial;
+        private Dictionary<string, string> datosPacienteBD = new Dictionary<string, string>();
         private ConexionDB conexionBD;
         private FlowLayoutPanel panelHorizontal;
         private byte[] archivoPDF = null;
         private string nombreArchivo = null;
+        private TableLayoutPanel tablaDiagnostico;
 
         Dictionary<string, string> mapaColumnas = new Dictionary<string, string>()
 {
@@ -464,6 +466,14 @@ namespace OpticaSistema
 
         private void btnRegistrar_Click(object sender, EventArgs e)
         {
+            object GetTextBoxValue(string nombre)
+            {
+                Control[] ctrls = panelHorizontal.Controls.Find(nombre, true);
+                if (ctrls.Length > 0 && ctrls[0] is TextBox txt)
+                    return string.IsNullOrWhiteSpace(txt.Text) ? DBNull.Value : txt.Text.Trim();
+                return DBNull.Value;
+            }
+
             // 1️⃣ Obtener motivo de consulta
             Control[] encontradosMotivo = this.Controls.Find("txtMotivoConsulta", true);
             if (encontradosMotivo.Length == 0 || !(encontradosMotivo[0] is TextBox txtMotivo))
@@ -1067,6 +1077,136 @@ namespace OpticaSistema
                     }
                 }
             }
+
+
+            // ======================= NUEVA SECCIÓN PARA PDF EN BD ==========================
+
+            string signosSintomas = GetTextBoxValue("txtSignosSintomas1")?.ToString() ?? "";
+            string drexamenOftalmologico = GetTextBoxValue("txtDoctorExamenOftalmologico")?.ToString() ?? "";
+            string examenOftalmologico = GetTextBoxValue("txtExamenOftalmologico")?.ToString() ?? "";
+            string tratamiento = GetTextBoxValue("txtTratamiento1")?.ToString() ?? "";
+            string observaciones = GetTextBoxValue("txtObservaciones1")?.ToString() ?? "";
+            string observacionesdiagnostico = GetTextBoxValue("txtObservacionesDiagnostico")?.ToString() ?? "";
+            string optometra = GetTextBoxValue("txtOptometro")?.ToString() ?? "";
+            string doctorDiagnostico = GetTextBoxValue("txtDoctorDiagnostico")?.ToString() ?? "";
+
+            // Captura de dibujos
+            Bitmap dibujoOjoDerecho = ObtenerImagenDesdePanel("panelOjoDerecho");
+            Bitmap dibujoOjoIzquierdo = ObtenerImagenDesdePanel("panelOjoIzquierdo");
+
+            // Datos generales
+            var datosParaImagen = new
+            {
+                Dni = datosPacienteBD.ContainsKey("Dni") ? datosPacienteBD["Dni"] : "",
+                Apellidos = datosPacienteBD.ContainsKey("Apellidos") ? datosPacienteBD["Apellidos"] : "",
+                Nombres = datosPacienteBD.ContainsKey("Nombres") ? datosPacienteBD["Nombres"] : "",
+                Edad = datosPacienteBD.ContainsKey("Edad") ? datosPacienteBD["Edad"] : "",
+                Sexo = datosPacienteBD.ContainsKey("Sexo") ? datosPacienteBD["Sexo"] : "",
+                Direccion = datosPacienteBD.ContainsKey("Direccion") ? datosPacienteBD["Direccion"] : "",
+                Telefono = datosPacienteBD.ContainsKey("Telefono") ? datosPacienteBD["Telefono"] : "",
+                Correo = datosPacienteBD.ContainsKey("Correo") ? datosPacienteBD["Correo"] : "",
+                EstadoCivil = datosPacienteBD.ContainsKey("EstadoCivil") ? datosPacienteBD["EstadoCivil"] : "",
+                Celular = datosPacienteBD.ContainsKey("Celular") ? datosPacienteBD["Celular"] : "",
+                Instruccion = datosPacienteBD.ContainsKey("Instruccion") ? datosPacienteBD["Instruccion"] : "",
+                Departamento = datosPacienteBD.ContainsKey("Departamento") ? datosPacienteBD["Departamento"] : "",
+                Provincia = datosPacienteBD.ContainsKey("Provincia") ? datosPacienteBD["Provincia"] : "",
+                Distrito = datosPacienteBD.ContainsKey("Distrito") ? datosPacienteBD["Distrito"] : "",
+                FechaNacimiento = datosPacienteBD.ContainsKey("FechaNacimiento") ? datosPacienteBD["FechaNacimiento"] : "",
+                Ocupacion = datosPacienteBD.ContainsKey("Ocupacion") ? datosPacienteBD["Ocupacion"] : "",
+                FechaConsulta = datosPacienteBD.ContainsKey("FechaConsulta") ? datosPacienteBD["FechaConsulta"] : "",
+                MotivoConsulta = datosPacienteBD.ContainsKey("MotivoConsulta") ? datosPacienteBD["MotivoConsulta"] : "",
+                ObservacionesDiagnostico = observacionesdiagnostico,
+                Observaciones = observaciones,
+                DRExamenOftalmologico = drexamenOftalmologico,
+                ExamenOftalmologico = examenOftalmologico,
+                SignosSintomas = signosSintomas,
+                Tratamiento = tratamiento,
+                Optometro = optometra,
+                DoctorDiagnostico = doctorDiagnostico
+            };
+
+            // Receta visual
+            Dictionary<string, string> recetaVisual = new Dictionary<string, string>();
+            string[] ojosReceta = { "OD", "OI" };
+            string[] tiposReceta = { "LEJOS", "CERCA" };
+            string[] camposReceta = { "Esferico", "Cilindrico", "Eje", "DIP", "AgudezaVisual" };
+
+            foreach (var tipo in tiposReceta)
+            {
+                foreach (var ojo in ojosReceta)
+                {
+                    foreach (var campo in camposReceta)
+                    {
+                        string nombre = $"txt{tipo}{ojo}{campo}";
+                        recetaVisual[$"{tipo}_{ojo}_{campo}"] = GetTextBoxValue(nombre)?.ToString() ?? "";
+                    }
+                }
+            }
+
+            // Diagnóstico
+            Dictionary<string, string> datosDiagnosticoDic = new Dictionary<string, string>();
+            string[] diagnosticos = { "AVSC", "AVCC", "PIOICARE" };
+
+            foreach (string campo in diagnosticos)
+            {
+                datosDiagnosticoDic[$"{campo}_OD"] = GetTextBoxValue($"txt{campo}_OD")?.ToString() ?? "";
+                datosDiagnosticoDic[$"{campo}_OI"] = GetTextBoxValue($"txt{campo}_OI")?.ToString() ?? "";
+            }
+
+            // Fecha y horas
+            var dtpFechaDiag = panelHorizontal.Controls.Find("dtpFechaDiagnostico", true).FirstOrDefault() as DateTimePicker;
+            if (dtpFechaDiag != null)
+                datosDiagnosticoDic["FECHA"] = dtpFechaDiag.Value.ToShortDateString();
+
+            var dtpInicio = panelHorizontal.Controls.Find("dtpHoraInicio", true).FirstOrDefault() as DateTimePicker;
+            if (dtpInicio != null)
+                datosDiagnosticoDic["HORA DE INICIO"] = dtpInicio.Value.ToShortTimeString();
+
+            var dtpFin = panelHorizontal.Controls.Find("dtpHoraTermino", true).FirstOrDefault() as DateTimePicker;
+            if (dtpFin != null)
+                datosDiagnosticoDic["HORA DE TÉRMINO"] = dtpFin.Value.ToShortTimeString();
+
+            // Generar imagen y PDF
+            byte[] imagenHistorialBytes = GenerarImagenConDatos(
+                datosParaImagen, datosPacienteBD, recetaVisual, datosDiagnosticoDic,
+                dibujoOjoDerecho, dibujoOjoIzquierdo
+            );
+
+            byte[] pdfFinalHistorial = null;
+
+            if (imagenHistorialBytes != null && imagenHistorialBytes.Length > 0)
+            {
+                if (archivoPDF != null && archivoPDF.Length > 0)
+                    pdfFinalHistorial = UnirImagenConPDFsEnMemoria(imagenHistorialBytes, archivoPDF);
+                else
+                    pdfFinalHistorial = ConvertirImagenBytesAPDFBytes(imagenHistorialBytes);
+            }
+
+            // GUARDAR EN LA BD
+            using (SqlConnection cn = conexionBD.Conectar())
+            {
+                cn.Open();
+
+                string sql =
+                    "UPDATE HistorialClinicoBD " +
+                    "SET PDFHistorialClinico = @PDFHistorialClinico " +
+                    "WHERE Id = @Id";
+
+                using (SqlCommand cmd = new SqlCommand(sql, cn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", idHistorial);
+
+                    if (pdfFinalHistorial != null && pdfFinalHistorial.Length > 0)
+                        cmd.Parameters.Add("@PDFHistorialClinico", SqlDbType.VarBinary).Value = pdfFinalHistorial;
+                    else
+                        cmd.Parameters.Add("@PDFHistorialClinico", SqlDbType.VarBinary).Value = DBNull.Value;
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            // ======================= FIN NUEVA SECCIÓN ==========================
+
         }
 
         private void CargarDatosExamenOcularCompleto()
@@ -1283,8 +1423,7 @@ WHERE Id = @Id";
         }
         // Método para crear la tabla de Correctores (la parte más compleja)
         private Control CrearPanelDiagnostico()
-        {
-            // FlowLayoutPanel para el título y la tabla+textarea
+        {// FlowLayoutPanel principal
             FlowLayoutPanel panelReceta = new FlowLayoutPanel();
             panelReceta.FlowDirection = FlowDirection.TopDown;
             panelReceta.AutoSize = true;
@@ -1307,39 +1446,35 @@ WHERE Id = @Id";
 
             TextBox txtDiagnosticoTitulo = new TextBox();
             txtDiagnosticoTitulo.Name = "txtDoctorDiagnostico";
+            txtDiagnosticoTitulo.ReadOnly = true;
             txtDiagnosticoTitulo.Width = 250;
             txtDiagnosticoTitulo.Font = new Font("Segoe UI", 12);
             txtDiagnosticoTitulo.Margin = new Padding(20, 0, 0, 0);
-            txtDiagnosticoTitulo.ReadOnly = true;
 
             CheckBox chkMostrar = new CheckBox();
             chkMostrar.Text = "Mostrar Diagnóstico";
             chkMostrar.Name = "cmbMostrarDiagnóstico";
-            chkMostrar.Checked = true; // Por defecto visible
+            chkMostrar.Checked = false; // Inicia oculto
             chkMostrar.Font = new Font("Segoe UI", 10, FontStyle.Regular);
             chkMostrar.AutoSize = true;
             chkMostrar.Margin = new Padding(10, 13, 0, 0);
 
-            // Añadir al subpanel
             panelTituloTexto.Controls.Add(lblTitulo);
             panelTituloTexto.Controls.Add(txtDiagnosticoTitulo);
-
             panelReceta.Controls.Add(chkMostrar);
             panelReceta.Controls.Add(panelTituloTexto);
 
-
-            // --- Contenedor con 2 columnas: tabla (izq) + textarea (der) ---
+            // --- Contenedor principal ---
             TableLayoutPanel contenedor = new TableLayoutPanel();
-            contenedor.ColumnCount = 2;
-            contenedor.RowCount = 1;
             contenedor.AutoSize = true;
             contenedor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            // Columnas con porcentaje: tabla 55%, textarea 45% -> ajustamos al 50%-50% para que textarea sea más ancho
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F)); // tabla 45%
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F)); // textarea 55%
+            contenedor.ColumnCount = 2;
+            contenedor.RowCount = 1;
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
 
             // --- Tabla Diagnóstico ---
-            TableLayoutPanel tablaDiagnostico = new TableLayoutPanel();
+            tablaDiagnostico = new TableLayoutPanel();
             tablaDiagnostico.Name = "tblDiagnostico";
             tablaDiagnostico.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
             tablaDiagnostico.BackColor = Color.WhiteSmoke;
@@ -1348,15 +1483,14 @@ WHERE Id = @Id";
             tablaDiagnostico.AutoSize = true;
             tablaDiagnostico.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
-            // Columnas: Campo | OD | OI
             tablaDiagnostico.ColumnCount = 3;
-            tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200)); // Campo
-            tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));   // OD
-            tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));   // OI
+            tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200));
+            tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            tablaDiagnostico.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
 
             string[] campos = { "AV.SC.", "AV.CC.", "PIO/ICARE", "FECHA:", "HORA DE INICIO:", "HORA DE TÉRMINO:" };
             tablaDiagnostico.RowCount = campos.Length + 1;
-            tablaDiagnostico.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // cabecera
+            tablaDiagnostico.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
 
             // Cabecera
             string[] headers = { "", "OD", "OI" };
@@ -1371,7 +1505,7 @@ WHERE Id = @Id";
                 tablaDiagnostico.Controls.Add(header, i, 0);
             }
 
-            // --- Filas ---
+            // Filas
             for (int r = 0; r < campos.Length; r++)
             {
                 int fila = r + 1;
@@ -1399,7 +1533,7 @@ WHERE Id = @Id";
                     tablaDiagnostico.Controls.Add(dtpFecha, 1, fila);
                     tablaDiagnostico.SetColumnSpan(dtpFecha, 2);
                 }
-                else if (campos[r] == "HORA DE INICIO:" || campos[r] == "HORA DE TÉRMINO:")
+                else if (campos[r].Contains("HORA"))
                 {
                     DateTimePicker dtpHora = new DateTimePicker();
                     dtpHora.Format = DateTimePickerFormat.Time;
@@ -1412,93 +1546,84 @@ WHERE Id = @Id";
                 }
                 else
                 {
+                    // TextBox OD
                     TextBox txtOD = new TextBox();
                     txtOD.Dock = DockStyle.Fill;
                     txtOD.Name = $"txt{campoBase}_OD";
                     txtOD.TextAlign = HorizontalAlignment.Center;
                     txtOD.Font = new Font("Segoe UI", 11);
+                    txtOD.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOD, 1, fila);
 
+                    // TextBox OI
                     TextBox txtOI = new TextBox();
                     txtOI.Dock = DockStyle.Fill;
                     txtOI.Name = $"txt{campoBase}_OI";
                     txtOI.TextAlign = HorizontalAlignment.Center;
                     txtOI.Font = new Font("Segoe UI", 11);
+                    txtOI.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOI, 2, fila);
                 }
             }
 
-            // --- TextArea al costado ---
+            // --- TextArea ---
             TextBox txtObservaciones = new TextBox();
             txtObservaciones.Multiline = true;
             txtObservaciones.ScrollBars = ScrollBars.Vertical;
             txtObservaciones.Dock = DockStyle.Fill;
             txtObservaciones.Font = new Font("Segoe UI", 11);
-            txtObservaciones.Height = 220; // mismo alto que la tabla
+            txtObservaciones.Height = 220;
             txtObservaciones.Name = "txtObservacionesDiagnostico";
+            txtObservaciones.Margin = new Padding(0, 0, 0, 0);
+            txtObservaciones.ReadOnly = true; // inicial deshabilitado
 
-            // Calcular margen izquierdo como 5% del ancho del contenedor
-            int margenIzquierdo = (int)(contenedor.Width * 0.05);
-            txtObservaciones.Margin = new Padding(margenIzquierdo, 0, 0, 0);
+            // Estado inicial: solo textarea
+            contenedor.ColumnCount = 1;
+            contenedor.ColumnStyles.Clear();
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            contenedor.Controls.Add(txtObservaciones, 0, 0);
+            txtObservaciones.Width = 780;
 
-            // Ajustar margen dinámicamente al cambiar tamaño del contenedor
-            contenedor.Resize += (s, e) =>
-            {
-                txtObservaciones.Margin = new Padding((int)(contenedor.Width * 0.05), 0, 0, 0);
-            };
-
-            // Agregar tabla y textarea al contenedor
-            contenedor.Controls.Add(tablaDiagnostico, 0, 0);
-            contenedor.Controls.Add(txtObservaciones, 1, 0);
-
-            // Agregar al panel principal
             panelReceta.Controls.Add(contenedor);
-            // --- Evento del CheckBox ---
+
+            // Evento CheckBox
             chkMostrar.CheckedChanged += (s, e) =>
             {
-                panelReceta.SuspendLayout();
                 contenedor.SuspendLayout();
+                contenedor.Controls.Clear();
 
                 if (chkMostrar.Checked)
                 {
-                    // --- Volver a mostrar la tabla ---
-                    contenedor.Controls.Clear();
-
-                    contenedor.ColumnStyles.Clear();
                     contenedor.ColumnCount = 2;
                     contenedor.RowCount = 1;
-                    contenedor.AutoSize = true;
-                    contenedor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F)); // tabla
-                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45f)); // textarea
-
+                    contenedor.ColumnStyles.Clear();
+                    contenedor.RowStyles.Clear();
+                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 480F));
+                    contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
+                    contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(tablaDiagnostico, 0, 0);
                     contenedor.Controls.Add(txtObservaciones, 1, 0);
 
-                    // Restaurar ancho automático del textarea
+                    tablaDiagnostico.Dock = DockStyle.Fill;
                     txtObservaciones.Dock = DockStyle.Fill;
-                    txtObservaciones.Width = tablaDiagnostico.Width - 90;
-                    txtObservaciones.Margin = new Padding(10, 0, 0, 0); // margen pequeño opcional
+                    txtObservaciones.Margin = new Padding(10, 0, 0, 0);
                 }
                 else
                 {
-                    // --- Ocultar la tabla y expandir el textarea ---
-                    contenedor.Controls.Clear();
                     contenedor.ColumnCount = 1;
+                    contenedor.RowCount = 1;
                     contenedor.ColumnStyles.Clear();
+                    contenedor.RowStyles.Clear();
                     contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+                    contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(txtObservaciones, 0, 0);
-
-                    // Asegurar que ocupe todo el ancho visible
                     txtObservaciones.Dock = DockStyle.Fill;
                     txtObservaciones.Margin = new Padding(0);
-                    txtObservaciones.Width = panelReceta.Width - 40; // compensar márgenes
                 }
 
                 contenedor.ResumeLayout();
-                panelReceta.ResumeLayout();
             };
 
             return panelReceta;
@@ -1667,14 +1792,21 @@ WHERE Id = @Id";
 
         private void CargarDatosHistorial()
         {
-            string[] camposPaciente = new string[] { "Dni", "Apellidos", "Nombres", "Edad" };
+            string[] camposPaciente = new string[]
+            {
+        "Apellidos", "Nombres","Direccion", "Telefono", "Correo", "EstadoCivil",
+        "Celular", "Instruccion", "Dni", "Departamento", "Provincia", "Distrito",
+        "Sexo", "FechaNacimiento", "Edad", "Ocupacion"
+            };
+
             string tipoUsuario = SesionUsuario.TipoUsuario; // O, F, R
 
             using (SqlConnection con = conexionBD.Conectar())
             {
                 string query = @"
 SELECT 
-    p.Dni, p.Apellidos, p.Nombres, p.Edad,
+    p.Dni, p.Apellidos, p.Nombres, p.Edad, p.Direccion, p.Telefono, p.Correo, p.EstadoCivil, p.Celular, 
+    p.Instruccion, p.Departamento, p.Provincia, p.Distrito, p.Sexo, p.FechaNacimiento, p.Ocupacion,
     h.FechaConsulta, h.MotivoConsulta
 FROM HistorialClinicoBD h
 INNER JOIN PacienteBD p ON h.IdPaciente = p.Id
@@ -1688,12 +1820,33 @@ WHERE h.Id = @Id";
 
                     if (reader.Read())
                     {
-                        // === Cargar datos del paciente ===
+                        // ============================================
+                        //  LLENAR datosPacienteBD
+                        // ============================================
+                        datosPacienteBD = new Dictionary<string, string>();
+
+                        foreach (string campo in camposPaciente)
+                        {
+                            if (!reader.IsDBNull(reader.GetOrdinal(campo)))
+                                datosPacienteBD[campo] = reader[campo].ToString();
+                            else
+                                datosPacienteBD[campo] = "";
+                        }
+
+                        // FECHA CONSULTA
+                        datosPacienteBD["FechaConsulta"] = reader["FechaConsulta"] != DBNull.Value
+                            ? Convert.ToDateTime(reader["FechaConsulta"]).ToShortDateString()
+                            : "";
+
+                        // MOTIVO
+                        datosPacienteBD["MotivoConsulta"] = reader["MotivoConsulta"]?.ToString() ?? "";
+
+                        // === Cargar datos en los TextBox ===
                         foreach (string campo in camposPaciente)
                         {
                             Control[] controles = panelHorizontal.Controls.Find("txt" + campo, true);
                             if (controles.Length > 0 && controles[0] is TextBox txt)
-                                txt.Text = reader[campo].ToString();
+                                txt.Text = datosPacienteBD[campo];
                         }
 
                         // === Cargar fecha de consulta ===
@@ -1708,15 +1861,14 @@ WHERE h.Id = @Id";
                         if (controlesMotivo.Length > 0 && controlesMotivo[0] is TextBox txtMotivo)
                         {
                             txtMotivo.Text = motivoConsulta;
-                            // 👇 1️⃣ Aplicar tus validaciones de permisos
+
+                            // 1️⃣ Validar permisos
                             AplicarValidacionesPorMotivo(motivoConsulta, tipoUsuario);
 
-                            // 👇 2️⃣ Si es examen ocular completo → cargar datos previos de todos los doctores
+                            // 2️⃣ Si es examen ocular completo, cargar datos previos
                             if (motivoConsulta == "Exámen Ocular Completo")
                             {
                                 CargarDatosExamenOcularCompleto();
-
-                                // 🔹 Revisar qué partes ya están completadas y deshabilitarlas
                                 VerificarPartesCompletadas();
                             }
                         }
@@ -2102,6 +2254,256 @@ WHERE Id = @Id";
         }
 
 
+        //Generar imagen con texto y despues PDF
+        private byte[] GenerarImagenConDatos(
+            dynamic datos,
+            Dictionary<string, string> datosPaciente,
+            Dictionary<string, string> recetaVisual,
+            Dictionary<string, string> datosDiagnostico,
+            Bitmap dibujoOjoDerecho,
+            Bitmap dibujoOjoIzquierdo)
+        {
+            string rutaPlantilla = Path.Combine(Application.StartupPath, "Resources", "plantilla_historial.jpg");
+
+            if (!File.Exists(rutaPlantilla))
+            {
+                MessageBox.Show("Plantilla de imagen no encontrada en: " + rutaPlantilla, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+
+            Bitmap plantilla = new Bitmap(System.Drawing.Image.FromFile(rutaPlantilla));
+            using (Graphics g = Graphics.FromImage(plantilla))
+            {
+                Font fuente = new Font("Tahoma", 12, FontStyle.Regular);
+                Font fuente2 = new Font("Tahoma", 11, FontStyle.Regular);
+                Brush pincel = Brushes.Black;
+
+                float ancho = plantilla.Width;
+                float alto = plantilla.Height;
+
+                // === Datos principales ===
+                g.DrawString(datos.Apellidos, fuente, pincel, new PointF(ancho * 0.14f, alto * 0.0925f));
+                g.DrawString(datos.Nombres, fuente, pincel, new PointF(ancho * 0.14f, alto * 0.1125f));
+                g.DrawString(datos.Dni, fuente, pincel, new PointF(ancho * 0.58f, alto * 0.092f));
+                g.DrawString(datos.FechaConsulta, fuente, pincel, new PointF(ancho * 0.85f, alto * 0.21f));
+                g.DrawString(datos.MotivoConsulta, fuente, pincel, new PointF(ancho * 0.23f, alto * 0.222f));
+                g.DrawString(datos.Tratamiento, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.87f));
+                g.DrawString(datos.Observaciones, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.46f));
+                g.DrawString(datos.DRExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.22f, alto * 0.548f));
+                g.DrawString(datos.ObservacionesDiagnostico, fuente, pincel, new PointF(ancho * 0.50f, alto * 0.77f));
+                g.DrawString(datos.Optometro, fuente, pincel, new PointF(ancho * 0.45f, alto * 0.222f));
+                g.DrawString(datos.SignosSintomas, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.57f));
+                g.DrawString(datos.ExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.67f));
+                g.DrawString(datos.DoctorDiagnostico, fuente, pincel, new PointF(ancho * 0.17f, alto * 0.753f));
+
+                // === Receta Visual ===
+                Dictionary<string, PointF> posicionesReceta = new Dictionary<string, PointF>
+                {
+                    { "LEJOS_OD_Esferico", new PointF(ancho * 0.25f, alto * 0.28f) },
+                    { "LEJOS_OD_Cilindrico", new PointF(ancho * 0.39f, alto * 0.28f) },
+                    { "LEJOS_OD_Eje", new PointF(ancho * 0.545f, alto * 0.28f) },
+                    { "LEJOS_OD_DIP", new PointF(ancho * 0.705f, alto * 0.28f) },
+                    { "LEJOS_OD_AgudezaVisual", new PointF(ancho * 0.875f, alto * 0.28f) },
+
+                    { "LEJOS_OI_Esferico", new PointF(ancho * 0.25f, alto * 0.325f) },
+                    { "LEJOS_OI_Cilindrico", new PointF(ancho * 0.39f, alto * 0.325f)},
+                    { "LEJOS_OI_Eje", new PointF(ancho * 0.545f, alto * 0.325f) },
+                    { "LEJOS_OI_DIP", new PointF(ancho * 0.705f, alto * 0.325f) },
+                    { "LEJOS_OI_AgudezaVisual", new PointF(ancho * 0.875f, alto * 0.325f) },
+
+                    { "CERCA_OD_Esferico", new PointF(ancho * 0.25f, alto * 0.37f) },
+                    { "CERCA_OD_Cilindrico", new PointF(ancho * 0.39f, alto * 0.37f)},
+                    { "CERCA_OD_Eje", new PointF(ancho * 0.545f, alto * 0.37f) },
+                    { "CERCA_OD_DIP", new PointF(ancho * 0.705f, alto * 0.37f) },
+                    { "CERCA_OD_AgudezaVisual", new PointF(ancho * 0.875f, alto * 0.37f) },
+
+                    { "CERCA_OI_Esferico", new PointF(ancho * 0.25f, alto * 0.41f) },
+                    { "CERCA_OI_Cilindrico", new PointF(ancho * 0.39f, alto * 0.41f) },
+                    { "CERCA_OI_Eje", new PointF(ancho * 0.545f, alto * 0.41f) },
+                    { "CERCA_OI_DIP", new PointF(ancho * 0.705f, alto * 0.41f) },
+                    { "CERCA_OI_AgudezaVisual", new PointF(ancho * 0.875f, alto * 0.41f) }
+                };
+
+                foreach (var kvp in recetaVisual)
+                {
+                    if (posicionesReceta.TryGetValue(kvp.Key, out PointF posicion))
+                        g.DrawString(kvp.Value, fuente, pincel, posicion);
+                }
+
+                // === Datos del paciente ===
+                Dictionary<string, PointF> posicionesPaciente = new Dictionary<string, PointF>
+                {
+                    { "Direccion", new PointF(ancho * 0.14f, alto * 0.1325f) },
+                    { "Telefono", new PointF(ancho * 0.14f, alto * 0.1525f) },
+                    { "Correo", new PointF(ancho * 0.14f, alto * 0.1725f) },
+                    { "EstadoCivil", new PointF(ancho * 0.14f, alto * 0.195f) },
+
+                    { "Celular", new PointF(ancho * 0.36f, alto * 0.1525f) },
+                    { "Instruccion", new PointF(ancho * 0.35f, alto * 0.195f) },
+                    { "Distrito", new PointF(ancho * 0.58f, alto * 0.112f) },
+                    { "Sexo", new PointF(ancho * 0.58f, alto * 0.152f) },
+                    { "FechaNacimiento", new PointF(ancho * 0.58f, alto * 0.175f) },
+
+                    { "Edad", new PointF(ancho * 0.74f, alto * 0.175f) },
+                    { "Ocupacion", new PointF(ancho * 0.58f, alto * 0.195f) }
+                };
+
+                foreach (var kvp in datosPaciente)
+                {
+                    if (!string.IsNullOrWhiteSpace(kvp.Value) && posicionesPaciente.TryGetValue(kvp.Key, out PointF posicion))
+                    {
+                        string valor = kvp.Value;
+                        if (kvp.Key == "FechaNacimiento" && DateTime.TryParse(valor, out DateTime fecha))
+                            valor = fecha.ToShortDateString();
+
+                        g.DrawString(valor, fuente, pincel, posicion);
+                    }
+                }
+
+                // === Diagnóstico ===
+                Dictionary<string, PointF> posicionesDiagnostico = new Dictionary<string, PointF>
+                {
+                    { "AVSC_OD", new PointF(ancho * 0.20f, alto * 0.774f) },
+                    { "AVSC_OI", new PointF(ancho * 0.31f, alto * 0.774f) },
+
+                    { "AVCC_OD", new PointF(ancho * 0.20f, alto * 0.789f) },
+                    { "AVCC_OI", new PointF(ancho * 0.31f, alto * 0.789f) },
+
+                    { "PIOICARE_OD", new PointF(ancho * 0.20f, alto * 0.804f) },
+                    { "PIOICARE_OI", new PointF(ancho * 0.35f, alto * 0.804f) },
+
+                    { "FECHA", new PointF(ancho * 0.20f, alto * 0.819f) },
+
+                    { "HORA DE INICIO", new PointF(ancho * 0.20f, alto * 0.834f) },
+
+                    { "HORA DE TÉRMINO", new PointF(ancho * 0.20f, alto * 0.849f) }
+                };
+
+                foreach (var kvp in datosDiagnostico)
+                {
+                    if (!string.IsNullOrWhiteSpace(kvp.Value) && posicionesDiagnostico.TryGetValue(kvp.Key, out PointF posicion))
+                        g.DrawString($"{kvp.Key}: {kvp.Value}", fuente2, pincel, posicion);
+                }
+
+                // === Ojos ===
+                Dictionary<string, PointF> posicionesOjos = new Dictionary<string, PointF>
+                {
+                    { "OjoDerecho_Titulo", new PointF(ancho * 0.68f, alto * 0.56f) },
+                    { "OjoDerecho_Imagen", new PointF(ancho * 0.58f, alto * 0.58f) },
+                    { "OjoIzquierdo_Titulo", new PointF(ancho * 0.8f, alto * 0.56f) },
+                    { "OjoIzquierdo_Imagen", new PointF(ancho * 0.8f, alto * 0.58f) }
+                };
+
+                if (dibujoOjoDerecho != null)
+                {
+                    g.DrawString("DERECHO", fuente, pincel, posicionesOjos["OjoDerecho_Titulo"]);
+                    g.DrawImage(dibujoOjoDerecho, new System.Drawing.Rectangle((int)posicionesOjos["OjoDerecho_Imagen"].X, (int)posicionesOjos["OjoDerecho_Imagen"].Y, 240, 120));
+                }
+
+                if (dibujoOjoIzquierdo != null)
+                {
+                    g.DrawString("IZQUIERDO", fuente, pincel, posicionesOjos["OjoIzquierdo_Titulo"]);
+                    g.DrawImage(dibujoOjoIzquierdo, new System.Drawing.Rectangle((int)posicionesOjos["OjoIzquierdo_Imagen"].X, (int)posicionesOjos["OjoIzquierdo_Imagen"].Y, 240, 120));
+                }
+            }
+
+            // Convertir la imagen a bytes y devolver
+            using (MemoryStream ms = new MemoryStream())
+            {
+                plantilla.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                return ms.ToArray();
+            }
+        }
+
+        private byte[] ConvertirImagenBytesAPDFBytes(byte[] imagenBytes)
+        {
+            if (imagenBytes == null || imagenBytes.Length == 0) return null;
+
+            using (MemoryStream msPdf = new MemoryStream())
+            {
+                iTextSharp.text.Document documento = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4);
+                iTextSharp.text.pdf.PdfWriter.GetInstance(documento, msPdf);
+                documento.Open();
+
+                try
+                {
+                    iTextSharp.text.Image imagen = iTextSharp.text.Image.GetInstance(imagenBytes);
+                    imagen.ScaleToFit(iTextSharp.text.PageSize.A4.Width - 40, iTextSharp.text.PageSize.A4.Height - 40);
+                    imagen.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    documento.Add(imagen);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al convertir imagen a PDF: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                finally
+                {
+                    documento.Close();
+                }
+                return msPdf.ToArray();
+            }
+        }
+
+        private byte[] UnirImagenConPDFsEnMemoria(byte[] imagenBytes, byte[] pdfOriginalBytes)
+        {
+            if (imagenBytes == null || imagenBytes.Length == 0) return pdfOriginalBytes;
+            if (pdfOriginalBytes == null || pdfOriginalBytes.Length == 0) return ConvertirImagenBytesAPDFBytes(imagenBytes);
+
+            byte[] pdfImagenBytes = ConvertirImagenBytesAPDFBytes(imagenBytes);
+            if (pdfImagenBytes == null || pdfImagenBytes.Length == 0) return pdfOriginalBytes;
+
+            using (MemoryStream msFinal = new MemoryStream())
+            {
+                iTextSharp.text.Document documento = new iTextSharp.text.Document();
+                iTextSharp.text.pdf.PdfCopy copia = new iTextSharp.text.pdf.PdfCopy(documento, msFinal);
+                documento.Open();
+
+                try
+                {
+                    // Añadir la página de la imagen convertida a PDF
+                    using (iTextSharp.text.pdf.PdfReader lectorImagen = new iTextSharp.text.pdf.PdfReader(pdfImagenBytes))
+                    {
+                        copia.AddPage(copia.GetImportedPage(lectorImagen, 1));
+                        lectorImagen.Close();
+                    }
+
+                    // Añadir las páginas del PDF original
+                    using (iTextSharp.text.pdf.PdfReader lectorOriginal = new iTextSharp.text.pdf.PdfReader(pdfOriginalBytes))
+                    {
+                        for (int i = 1; i <= lectorOriginal.NumberOfPages; i++)
+                        {
+                            copia.AddPage(copia.GetImportedPage(lectorOriginal, i));
+                        }
+                        lectorOriginal.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al unir PDFs en memoria: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                finally
+                {
+                    documento.Close();
+                }
+                return msFinal.ToArray();
+            }
+        }
+
+
+        private Bitmap ObtenerImagenDesdePanel(string nombrePanel)
+        {
+            Control[] ctrls = panelHorizontal.Controls.Find(nombrePanel, true);
+            if (ctrls.Length > 0 && ctrls[0] is FlowLayoutPanel pnl)
+            {
+                PictureBox pic = pnl.Controls.OfType<PictureBox>().FirstOrDefault();
+                if (pic?.Image != null)
+                    return new Bitmap(pic.Image);
+            }
+            return null;
+        }
+    
     }
 }
 

@@ -1488,6 +1488,23 @@ WHERE Id = @Id";
 
             if (dr["OjoIzquierdo"] != DBNull.Value)
                 CargarImagenOjoDesdeBD((byte[])dr["OjoIzquierdo"], "panelOjoIzquierdo");
+
+            // ✔ Cargar NombreArchivo
+            if (dr["NombreArchivo"] != DBNull.Value)
+            {
+                Control[] ctrlNombre = this.Controls.Find("lblNombreArchivo", true);
+                if (ctrlNombre.Length > 0 && ctrlNombre[0] is Label lbl)
+                {
+                    lbl.Text = dr["NombreArchivo"].ToString();
+                    nombreArchivo = lbl.Text;
+                }
+            }
+
+            // ✔ Cargar Archivo
+            if (dr["Archivo"] != DBNull.Value)
+            {
+                archivoPDF = (byte[])dr["Archivo"];
+            }
         }
 
         private void CargarCamposRetinologo(SqlDataReader dr)

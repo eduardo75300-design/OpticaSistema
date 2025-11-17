@@ -765,7 +765,7 @@ VALUES
                                 datosDiagnosticoDic["HORA DE TÉRMINO"] = dtpFin.Value.ToShortTimeString();
 
 
-                            // ==== GENERAR LA IMAGEN EN MEMORIA ====
+                            // ==== GENERAR LA IMAGEN EN MEMORIA Y GENERAR EL PDF ====
                             byte[] imagenHistorialBytes = GenerarImagenConDatos(datosParaImagen, datosPacienteBD, recetaVisual, datosDiagnosticoDic, dibujoOjoDerecho, dibujoOjoIzquierdo);
 
                             byte[] pdfFinalHistorial = null;
@@ -1522,16 +1522,8 @@ VALUES
             }
         }
 
-        /// <summary>
-        /// Genera la imagen del historial clínico con los datos proporcionados y la devuelve como un array de bytes.
-        /// </summary>
-        /// <param name="datos">Objeto anónimo con los datos principales.</param>
-        /// <param name="datosPaciente">Diccionario con los datos del paciente.</param>
-        /// <param name="recetaVisual">Diccionario con los datos de la receta visual.</param>
-        /// <param name="datosDiagnostico">Diccionario con los datos del diagnóstico.</param>
-        /// <param name="dibujoOjoDerecho">Bitmap del dibujo del ojo derecho.</param>
-        /// <param name="dibujoOjoIzquierdo">Bitmap del dibujo del ojo izquierdo.</param>
-        /// <returns>Array de bytes de la imagen generada en formato PNG.</returns>
+
+        //Generar imagen con texto y despues PDF
         private byte[] GenerarImagenConDatos(
             dynamic datos,
             Dictionary<string, string> datosPaciente,
@@ -1563,15 +1555,15 @@ VALUES
                 g.DrawString(datos.Nombres, fuente, pincel, new PointF(ancho * 0.14f, alto * 0.1125f));
                 g.DrawString(datos.Dni, fuente, pincel, new PointF(ancho * 0.58f, alto * 0.092f));
                 g.DrawString(datos.FechaConsulta, fuente, pincel, new PointF(ancho * 0.85f, alto * 0.21f));
-                g.DrawString(datos.MotivoConsulta, fuente, pincel, new PointF(ancho * 0.23f, alto * 0.225f));
+                g.DrawString(datos.MotivoConsulta, fuente, pincel, new PointF(ancho * 0.23f, alto * 0.222f));
                 g.DrawString(datos.Tratamiento, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.87f));
                 g.DrawString(datos.Observaciones, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.46f));
-                g.DrawString(datos.DRExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.25f, alto * 0.65f));
+                g.DrawString(datos.DRExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.22f, alto * 0.548f));
                 g.DrawString(datos.ObservacionesDiagnostico, fuente, pincel, new PointF(ancho * 0.50f, alto * 0.77f));
-                g.DrawString(datos.Optometro, fuente, pincel, new PointF(ancho * 0.40f, alto * 0.225f));
+                g.DrawString(datos.Optometro, fuente, pincel, new PointF(ancho * 0.45f, alto * 0.222f));
                 g.DrawString(datos.SignosSintomas, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.57f));
                 g.DrawString(datos.ExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.67f));
-                g.DrawString(datos.DoctorDiagnostico, fuente, pincel, new PointF(ancho * 0.17f, alto * 0.755f));
+                g.DrawString(datos.DoctorDiagnostico, fuente, pincel, new PointF(ancho * 0.17f, alto * 0.753f));
 
                 // === Receta Visual ===
                 Dictionary<string, PointF> posicionesReceta = new Dictionary<string, PointF>
@@ -1640,20 +1632,20 @@ VALUES
                 // === Diagnóstico ===
                 Dictionary<string, PointF> posicionesDiagnostico = new Dictionary<string, PointF>
                 {
-                    { "AVSC_OD", new PointF(ancho * 0.20f, alto * 0.775f) },
-                    { "AVSC_OI", new PointF(ancho * 0.31f, alto * 0.775f) },
+                    { "AVSC_OD", new PointF(ancho * 0.20f, alto * 0.774f) },
+                    { "AVSC_OI", new PointF(ancho * 0.31f, alto * 0.774f) },
 
-                    { "AVCC_OD", new PointF(ancho * 0.20f, alto * 0.785f) },
-                    { "AVCC_OI", new PointF(ancho * 0.31f, alto * 0.785f) },
+                    { "AVCC_OD", new PointF(ancho * 0.20f, alto * 0.789f) },
+                    { "AVCC_OI", new PointF(ancho * 0.31f, alto * 0.789f) },
 
-                    { "PIOICARE_OD", new PointF(ancho * 0.20f, alto * 0.795f) },
-                    { "PIOICARE_OI", new PointF(ancho * 0.31f, alto * 0.795f) },
+                    { "PIOICARE_OD", new PointF(ancho * 0.20f, alto * 0.804f) },
+                    { "PIOICARE_OI", new PointF(ancho * 0.35f, alto * 0.804f) },
 
-                    { "FECHA", new PointF(ancho * 0.20f, alto * 0.805f) },
+                    { "FECHA", new PointF(ancho * 0.20f, alto * 0.819f) },
 
-                    { "HORA DE INICIO", new PointF(ancho * 0.20f, alto * 0.815f) },
+                    { "HORA DE INICIO", new PointF(ancho * 0.20f, alto * 0.834f) },
 
-                    { "HORA DE TÉRMINO", new PointF(ancho * 0.20f, alto * 0.825f) }
+                    { "HORA DE TÉRMINO", new PointF(ancho * 0.20f, alto * 0.849f) }
                 };
 
                 foreach (var kvp in datosDiagnostico)
@@ -1692,12 +1684,7 @@ VALUES
             }
         }
 
-        /// <summary>
-        /// Convierte un array de bytes de una imagen (PNG/JPG) a un array de bytes de un documento PDF.
-        /// </summary>
-        /// <param name="imagenBytes">Array de bytes de la imagen a convertir.</param>
-        /// <returns>Array de bytes del PDF resultante.</returns>
-        private byte[] ConvertirImagenBytesAPDFBytes(byte[] imagenBytes)
+             private byte[] ConvertirImagenBytesAPDFBytes(byte[] imagenBytes)
         {
             if (imagenBytes == null || imagenBytes.Length == 0) return null;
 
@@ -1727,13 +1714,6 @@ VALUES
             }
         }
 
-        /// <summary>
-        /// Une un array de bytes de una imagen (convertida a PDF internamente) con un array de bytes de un PDF existente.
-        /// Todo el proceso se realiza en memoria.
-        /// </summary>
-        /// <param name="imagenBytes">Array de bytes de la imagen a añadir al inicio del PDF.</param>
-        /// <param name="pdfOriginalBytes">Array de bytes del PDF existente a unir.</param>
-        /// <returns>Array de bytes del PDF resultante con la imagen y el PDF original.</returns>
         private byte[] UnirImagenConPDFsEnMemoria(byte[] imagenBytes, byte[] pdfOriginalBytes)
         {
             if (imagenBytes == null || imagenBytes.Length == 0) return pdfOriginalBytes;
@@ -1780,6 +1760,10 @@ VALUES
             }
         }
 
+        
+
+
+
 
         private Bitmap ObtenerImagenDesdePanel(string nombrePanel)
         {
@@ -1792,5 +1776,7 @@ VALUES
             }
             return null;
         }
+
+        //Fin
     }
 }
