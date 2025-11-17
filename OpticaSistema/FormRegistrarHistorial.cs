@@ -22,7 +22,7 @@ namespace OpticaSistema
         private FlowLayoutPanel panelHorizontal;
         byte[] archivoPDF = null; // Declarado aquí para que sea accesible en todo el formulario
         string nombreArchivo = null; // Para guardar el nombre del archivo PDF
-
+        int siguienteId = 0;
         public FormRegistrarHistorial()
         {
             InitializeComponent();
@@ -584,11 +584,19 @@ namespace OpticaSistema
                             { "txtPIOICARE_OI", "PIO_OI" }
                         };
 
+                        using (SqlCommand cmdMax = new SqlCommand("SELECT ISNULL(MAX(Id), 0) + 1 FROM HistorialClinicoBD", cn))
+                        {
+                            object resultMax = cmdMax.ExecuteScalar();
+                            siguienteId = Convert.ToInt32(resultMax);
+                        }
+
                         // 🔹 Comando INSERT completo
                         string sqlInsert = @"
+SET IDENTITY_INSERT HistorialClinicoBD ON;
+
 INSERT INTO HistorialClinicoBD
 (
-    IdPaciente, FechaConsulta, MotivoConsulta, EstadoHistorial, EstadoHistorialTurno,
+    Id,IdPaciente, FechaConsulta, MotivoConsulta, EstadoHistorial, EstadoHistorialTurno,
     Nombre_optometra, Lejos_OD_Esferico, Lejos_OD_Cilindrico, Lejos_OD_EJE, Lejos_OD_DIP, Lejos_OD_AV,
     Lejos_OI_Esferico, Lejos_OI_Cilindrico, Lejos_OI_EJE, Lejos_OI_DIP, Lejos_OI_AV,
     Cerca_OD_Esferico, Cerca_OD_Cilindrico, Cerca_OD_EJE, Cerca_OD_DIP, Cerca_OD_AV,
@@ -601,7 +609,7 @@ INSERT INTO HistorialClinicoBD
 )
 VALUES
 (
-    @IdPaciente, @FechaConsulta, @MotivoConsulta, @EstadoHistorial, @EstadoHistorialTurno,
+    @Id,@IdPaciente, @FechaConsulta, @MotivoConsulta, @EstadoHistorial, @EstadoHistorialTurno,
     @Nombre_optometra, @Lejos_OD_Esferico, @Lejos_OD_Cilindrico, @Lejos_OD_EJE, @Lejos_OD_DIP, @Lejos_OD_AV,
     @Lejos_OI_Esferico, @Lejos_OI_Cilindrico, @Lejos_OI_EJE, @Lejos_OI_DIP, @Lejos_OI_AV,
     @Cerca_OD_Esferico, @Cerca_OD_Cilindrico, @Cerca_OD_EJE, @Cerca_OD_DIP, @Cerca_OD_AV,
@@ -611,11 +619,17 @@ VALUES
     @Nombre_retinologo, @Diagnostico, @AV_SC_OD, @AV_SC_OI, @AV_CC_OD, @AV_CC_OI,
     @PIO_OD, @PIO_OI, @Fecha_Diagnostico, @Hora_Inicio, @Hora_Termino,
     @Tratamiento, @NombreArchivo, @Archivo, @PDFHistorialClinico
-)";
+);
+
+SET IDENTITY_INSERT HistorialClinicoBD OFF;
+
+
+";
 
                         using (SqlCommand cmd = new SqlCommand(sqlInsert, cn))
                         {
                             // 🔹 Parámetros básicos
+                            cmd.Parameters.Add("@Id", SqlDbType.Int).Value = siguienteId;
                             cmd.Parameters.Add("@IdPaciente", SqlDbType.Int).Value = idPaciente;
                             cmd.Parameters.Add("@FechaConsulta", SqlDbType.DateTime).Value = fechaConsulta;
                             cmd.Parameters.Add("@MotivoConsulta", SqlDbType.NVarChar, 100).Value = motivoConsulta;
@@ -766,7 +780,7 @@ VALUES
 
 
                             // ==== GENERAR LA IMAGEN EN MEMORIA Y GENERAR EL PDF ====
-                            byte[] imagenHistorialBytes = GenerarImagenConDatos(datosParaImagen, datosPacienteBD, recetaVisual, datosDiagnosticoDic, dibujoOjoDerecho, dibujoOjoIzquierdo);
+                            byte[] imagenHistorialBytes = GenerarImagenConDatos(datosParaImagen, datosPacienteBD, recetaVisual, datosDiagnosticoDic, dibujoOjoDerecho, dibujoOjoIzquierdo, siguienteId);
 
                             byte[] pdfFinalHistorial = null;
 
@@ -1530,7 +1544,9 @@ VALUES
             Dictionary<string, string> recetaVisual,
             Dictionary<string, string> datosDiagnostico,
             Bitmap dibujoOjoDerecho,
-            Bitmap dibujoOjoIzquierdo)
+            Bitmap dibujoOjoIzquierdo,
+            int numeroHistorial
+            )
         {
             string rutaPlantilla = Path.Combine(Application.StartupPath, "Resources", "plantilla_historial.jpg");
 
@@ -1565,6 +1581,7 @@ VALUES
                 g.DrawString(datos.ExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.67f));
                 g.DrawString(datos.DoctorDiagnostico, fuente, pincel, new PointF(ancho * 0.17f, alto * 0.753f));
 
+                g.DrawString("" + numeroHistorial,fuente,pincel,new PointF(ancho * 0.86f, alto * 0.105f));
                 // === Receta Visual ===
                 Dictionary<string, PointF> posicionesReceta = new Dictionary<string, PointF>
                 {
