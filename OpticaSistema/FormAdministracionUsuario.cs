@@ -399,8 +399,7 @@ namespace OpticaSistema
 
                 if (string.IsNullOrWhiteSpace(txtNombre.Text) ||
                     string.IsNullOrWhiteSpace(txtApellido.Text) ||
-                    string.IsNullOrWhiteSpace(txtDni.Text) ||
-                    string.IsNullOrWhiteSpace(txtClave.Text))
+                    string.IsNullOrWhiteSpace(txtDni.Text))
 
                 {
                     MessageBox.Show("Por favor, complete todos los campos.");
@@ -452,13 +451,47 @@ namespace OpticaSistema
                             }
 
 
-                            // Actualizar usuario existente
-                            string query = @"UPDATE UsuarioBD SET Nombres = @nombres, Apellidos = @apellidos, Contraseña = @clave, Correo = @correo, Direccion = @direccion, Celular = @celular, Sexo = @sexo, TipoUsuario = @tipo, Estado = @estado, Dni = @dniNuevo WHERE Dni = @dni";
+                            string query;
+
+                            bool cambiarClave = !string.IsNullOrWhiteSpace(txtClave.Text);
+
+                            if (cambiarClave)
+                            {
+                                // Actualiza todo incluyendo contraseña
+                                query = @"UPDATE UsuarioBD 
+              SET Nombres = @nombres, 
+                  Apellidos = @apellidos, 
+                  Contraseña = @clave,
+                  Correo = @correo, 
+                  Direccion = @direccion, 
+                  Celular = @celular, 
+                  Sexo = @sexo, 
+                  TipoUsuario = @tipo, 
+                  Estado = @estado, 
+                  Dni = @dniNuevo
+              WHERE Dni = @dni";
+                            }
+                            else
+                            {
+                                // Actualiza todo excepto la contraseña
+                                query = @"UPDATE UsuarioBD 
+              SET Nombres = @nombres, 
+                  Apellidos = @apellidos, 
+                  Correo = @correo, 
+                  Direccion = @direccion, 
+                  Celular = @celular, 
+                  Sexo = @sexo, 
+                  TipoUsuario = @tipo, 
+                  Estado = @estado, 
+                  Dni = @dniNuevo
+              WHERE Dni = @dni";
+                            }
 
                             SqlCommand cmd = new SqlCommand(query, cn);
+
+                            // Parámetros comunes
                             cmd.Parameters.AddWithValue("@nombres", txtNombre.Text.Trim());
                             cmd.Parameters.AddWithValue("@apellidos", txtApellido.Text.Trim());
-                            cmd.Parameters.AddWithValue("@clave", txtClave.Text.Trim());
                             cmd.Parameters.AddWithValue("@correo", txtCorreo.Text.Trim());
                             cmd.Parameters.AddWithValue("@direccion", txtDireccion.Text.Trim());
                             cmd.Parameters.AddWithValue("@celular", txtCelular.Text.Trim());
@@ -467,43 +500,16 @@ namespace OpticaSistema
                             cmd.Parameters.AddWithValue("@estado", chkEstado.Checked);
                             cmd.Parameters.AddWithValue("@dni", dniEditando);
                             cmd.Parameters.AddWithValue("@dniNuevo", txtDni.Text.Trim());
-                            cmd.ExecuteNonQuery();
-                            MessageBox.Show("Usuario actualizado correctamente.");
 
-                        }
-                        else
-                        {
-                            
-                            // Verificar si el DNI ya existe
-                            string verificarQuery = "SELECT COUNT(*) FROM UsuarioBD WHERE Dni = @dni";
-                            SqlCommand verificarCmd = new SqlCommand(verificarQuery, cn);
-                            verificarCmd.Parameters.AddWithValue("@dni", txtDni.Text.Trim());
-                            int existe = (int)verificarCmd.ExecuteScalar();
-
-                            if (existe > 0)
+                            // Solo si ingresa nueva clave
+                            if (cambiarClave)
                             {
-                                MessageBox.Show("Ya existe un usuario con ese DNI.");
-                                return;
+                                cmd.Parameters.AddWithValue("@clave", txtClave.Text.Trim());
                             }
-                            // Insertar nuevo usuario con Estado y Firma
-                            string query = @"INSERT INTO UsuarioBD (Nombres, Apellidos, Contraseña, Dni, Correo, Direccion, Sexo, TipoUsuario, Celular, Estado) VALUES (@nombres, @apellidos, @clave, @dni, @correo, @direccion, @sexo, @tipo, @celular, @estado)";
-
-                            SqlCommand cmd = new SqlCommand(query, cn);
-                            cmd.Parameters.AddWithValue("@nombres", txtNombre.Text.Trim());
-                            cmd.Parameters.AddWithValue("@apellidos", txtApellido.Text.Trim());
-                            cmd.Parameters.AddWithValue("@clave", txtClave.Text.Trim());
-                            cmd.Parameters.AddWithValue("@dni", txtDni.Text.Trim());
-                            cmd.Parameters.AddWithValue("@correo", txtCorreo.Text.Trim());
-                            cmd.Parameters.AddWithValue("@direccion", txtDireccion.Text.Trim());
-                            cmd.Parameters.AddWithValue("@celular", txtCelular.Text.Trim());
-                            cmd.Parameters.AddWithValue("@sexo", sexoOpciones[sexoSeleccionado]);
-                            cmd.Parameters.AddWithValue("@estado", true);
-                            cmd.Parameters.AddWithValue("@tipo", tipoUsuarioOpciones[tipoSeleccionado]);
-
-
 
                             cmd.ExecuteNonQuery();
-                            MessageBox.Show("Usuario registrado correctamente.");
+
+                            MessageBox.Show("Usuario actualizado correctamente.");
 
                         }
 
@@ -708,7 +714,7 @@ namespace OpticaSistema
                             txtApellido.Text = reader["Apellidos"].ToString();
                             txtDni.Text = reader["Dni"].ToString();
                             txtCorreo.Text = reader["Correo"].ToString();
-                            txtClave.Text = reader["Contraseña"].ToString();
+                            txtClave.Text = "";
                             txtDireccion.Text = reader["Direccion"].ToString();
                             txtCelular.Text = reader["Celular"].ToString();
 

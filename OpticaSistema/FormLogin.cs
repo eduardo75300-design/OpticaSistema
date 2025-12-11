@@ -110,7 +110,7 @@ namespace OpticaSistema
             this.Text = "OpticaSistema - Inicio de sesión";
             this.Icon = new Icon("Imagenes/log.ico");
             ActualizarEdades();
-
+            CrearAdminSiNoExiste();
         }
 
 
@@ -154,13 +154,6 @@ namespace OpticaSistema
             {
                 MessageBox.Show("Usuario o Contraseña incorrecto", "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-
-
-
-
-
-
         }
 
         public class AppContext : ApplicationContext
@@ -177,34 +170,37 @@ namespace OpticaSistema
             }
         }
 
-
-
         private bool ValidarUsuario(string usuario, string contrasena)
         {
-            bool valido = false;
             using (SqlConnection con = conexionBD.Conectar())
             {
                 try
                 {
                     con.Open();
-                    string query = "SELECT COUNT(*) FROM usuarioBD WHERE Dni = @Dni AND Contraseña = @Contraseña";
+                    string query = "SELECT Contraseña FROM usuarioBD WHERE Dni = @Dni";
+
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
                         cmd.Parameters.AddWithValue("@Dni", usuario);
-                        cmd.Parameters.AddWithValue("@Contraseña", contrasena);
 
-                        int count = (int)cmd.ExecuteScalar();
-                        valido = count > 0;
+                        object result = cmd.ExecuteScalar();
 
+                        // Si no existe el usuario
+                        if (result == null || result == DBNull.Value)
+                            return false;
+
+                        string storedHash = result.ToString();
+
+                        // Verificar hash
+                        return PasswordHelper.VerifyPassword(storedHash, contrasena);
                     }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Error al conectar: " + ex.Message);
+                    return false;
                 }
             }
-            return valido;
-
         }
 
         private void label3_Click(object sender, EventArgs e)
@@ -275,7 +271,41 @@ namespace OpticaSistema
             }
         }
 
+        private void CrearAdminSiNoExiste()
+        {
+            using (SqlConnection con = conexionBD.Conectar())
+            {
+                con.Open();
 
+                // Verificar si ya existe un admin con DNI 71003810
+                string checkQuery = "SELECT COUNT(*) FROM UsuarioBD WHERE Dni = '71003810'";
+                SqlCommand checkCmd = new SqlCommand(checkQuery, con);
+
+                int count = (int)checkCmd.ExecuteScalar();
+
+                if (count > 0)
+                {
+                    return; // Ya existe, no hacer nada
+                }
+
+                // Crear contraseña hasheada
+                string hash = PasswordHelper.HashPassword("admin123");
+
+                // Insertar el Admin
+                string insertQuery = @"
+            INSERT INTO UsuarioBD 
+            (Nombres, Apellidos, Contraseña, Dni, Celular, Correo, Sexo, Direccion, TipoUsuario, Estado)
+            VALUES 
+            ('ADMIN', 'MASTER', @hash, '71003810', '000000000', 'admin@admin.com', 'M', 'N/A', 'A', 1)";
+
+                SqlCommand insertCmd = new SqlCommand(insertQuery, con);
+                insertCmd.Parameters.AddWithValue("@hash", hash);
+                insertCmd.ExecuteNonQuery();
+
+                MessageBox.Show("Usuario ADMIN creado automáticamente.\nDNI: 71003810\nContraseña: admin123",
+                                "Administrador creado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
 
     }
 
