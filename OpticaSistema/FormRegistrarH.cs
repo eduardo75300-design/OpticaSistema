@@ -23,7 +23,7 @@ namespace OpticaSistema
         private byte[] archivoPDF = null;
         private string nombreArchivo = null;
         private TableLayoutPanel tablaDiagnostico;
-
+        int siguienteId = 0;
         Dictionary<string, string> mapaColumnas = new Dictionary<string, string>()
 {
     //MEDIDA DE LA VISTA
@@ -1816,6 +1816,7 @@ WHERE h.Id = @Id";
                 {
                     cmd.Parameters.AddWithValue("@Id", idHistorial);
                     con.Open();
+                                        
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     if (reader.Read())
@@ -2261,7 +2262,8 @@ WHERE Id = @Id";
             Dictionary<string, string> recetaVisual,
             Dictionary<string, string> datosDiagnostico,
             Bitmap dibujoOjoDerecho,
-            Bitmap dibujoOjoIzquierdo)
+            Bitmap dibujoOjoIzquierdo
+            )
         {
             string rutaPlantilla = Path.Combine(Application.StartupPath, "Resources", "plantilla_historial.jpg");
 
@@ -2295,6 +2297,7 @@ WHERE Id = @Id";
                 g.DrawString(datos.SignosSintomas, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.57f));
                 g.DrawString(datos.ExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.67f));
                 g.DrawString(datos.DoctorDiagnostico, fuente, pincel, new PointF(ancho * 0.17f, alto * 0.753f));
+                g.DrawString(idHistorial.ToString(), fuente, pincel, new PointF(ancho * 0.86f, alto * 0.105f));
 
                 // === Receta Visual ===
                 Dictionary<string, PointF> posicionesReceta = new Dictionary<string, PointF>

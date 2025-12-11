@@ -23,7 +23,7 @@ namespace OpticaSistema
         private Bitmap bmpOjoDerecho;
         private Bitmap bmpOjoIzquierdo;
         private Dictionary<string, string> datosPacienteBD = new Dictionary<string, string>();
-
+        int siguienteId = 0;
         private class ImagenOjoData
         {
             public Bitmap ImagenBase { get; set; }
@@ -2343,6 +2343,7 @@ WHERE Id = @Id";
                 g.DrawString(datos.ExamenOftalmologico, fuente, pincel, new PointF(ancho * 0.13f, alto * 0.67f));
                 g.DrawString(datos.DoctorDiagnostico, fuente, pincel, new PointF(ancho * 0.17f, alto * 0.753f));
 
+                g.DrawString(idHistorial.ToString(), fuente, pincel, new PointF(ancho * 0.86f, alto * 0.105f));
                 // === Receta Visual ===
                 Dictionary<string, PointF> posicionesReceta = new Dictionary<string, PointF>
                 {
