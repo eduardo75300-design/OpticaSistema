@@ -24,6 +24,7 @@ namespace OpticaSistema
         private string nombreArchivo = null;
         private TableLayoutPanel tablaDiagnostico;
         int siguienteId = 0;
+        Button btnRegistrar;
         Dictionary<string, string> mapaColumnas = new Dictionary<string, string>()
 {
     //MEDIDA DE LA VISTA
@@ -441,7 +442,7 @@ namespace OpticaSistema
             panelBotonRegistrar.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
             // Botón REGISTRAR
-            Button btnRegistrar = new Button();
+            btnRegistrar = new Button();
             btnRegistrar.Text = "REGISTRAR";
             btnRegistrar.Font = new Font("Segoe UI", 12, FontStyle.Bold);
             btnRegistrar.Width = 200;
@@ -1966,33 +1967,46 @@ WHERE h.Id = @Id";
             if (dr["Diagnostico"] != DBNull.Value)
                 ((TextBox)this.Controls.Find("txtObservacionesDiagnostico", true)[0]).Text = dr["Diagnostico"].ToString();
 
-            // AV sin corrección
-            if (dr["AV_SC_OD"] != DBNull.Value)
-                ((TextBox)this.Controls.Find("txtAVSC_OD", true)[0]).Text = dr["AV_SC_OD"].ToString();
-            if (dr["AV_SC_OI"] != DBNull.Value)
-                ((TextBox)this.Controls.Find("txtAVSC_OI", true)[0]).Text = dr["AV_SC_OI"].ToString();
+            var controles = tablaDiagnostico.Controls.Find("txtAVSC_OD", true);
+            if (controles.Length > 0 && dr["AV_SC_OD"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_SC_OD"].ToString();
 
-            // AV con corrección
-            if (dr["AV_CC_OD"] != DBNull.Value)
-                ((TextBox)this.Controls.Find("txtAVCC_OD", true)[0]).Text = dr["AV_CC_OD"].ToString();
-            if (dr["AV_CC_OI"] != DBNull.Value)
-                ((TextBox)this.Controls.Find("txtAVCC_OI", true)[0]).Text = dr["AV_CC_OI"].ToString();
+            controles = tablaDiagnostico.Controls.Find("txtAVSC_OI", true);
+            if (controles.Length > 0 && dr["AV_SC_OI"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_SC_OI"].ToString();
 
-            // PIO
-            if (dr["PIO_OD"] != DBNull.Value)
-                ((TextBox)this.Controls.Find("txtPIOICARE_OD", true)[0]).Text = dr["PIO_OD"].ToString();
-            if (dr["PIO_OI"] != DBNull.Value)
-                ((TextBox)this.Controls.Find("txtPIOICARE_OI", true)[0]).Text = dr["PIO_OI"].ToString();
+            // AV.CC.
+            controles = tablaDiagnostico.Controls.Find("txtAVCC_OD", true);
+            if (controles.Length > 0 && dr["AV_CC_OD"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_CC_OD"].ToString();
 
-            // Fecha y horas
-            if (dr["Fecha_Diagnostico"] != DBNull.Value)
-                ((DateTimePicker)this.Controls.Find("dtpFechaDiagnostico", true)[0]).Value = Convert.ToDateTime(dr["Fecha_Diagnostico"]);
+            controles = tablaDiagnostico.Controls.Find("txtAVCC_OI", true);
+            if (controles.Length > 0 && dr["AV_CC_OI"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["AV_CC_OI"].ToString();
 
-            if (dr["Hora_Inicio"] != DBNull.Value)
-                ((DateTimePicker)this.Controls.Find("dtpHoraInicio", true)[0]).Value = DateTime.Today.Add(TimeSpan.Parse(dr["Hora_Inicio"].ToString()));
+            // PIO/ICARE
+            controles = tablaDiagnostico.Controls.Find("txtPIOICARE_OD", true);
+            if (controles.Length > 0 && dr["PIO_OD"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["PIO_OD"].ToString();
 
-            if (dr["Hora_Termino"] != DBNull.Value)
-                ((DateTimePicker)this.Controls.Find("dtpHoraTermino", true)[0]).Value = DateTime.Today.Add(TimeSpan.Parse(dr["Hora_Termino"].ToString()));
+            controles = tablaDiagnostico.Controls.Find("txtPIOICARE_OI", true);
+            if (controles.Length > 0 && dr["PIO_OI"] != DBNull.Value)
+                ((TextBox)controles[0]).Text = dr["PIO_OI"].ToString();
+
+            // FECHA
+            controles = tablaDiagnostico.Controls.Find("dtpFechaDiagnostico", true);
+            if (controles.Length > 0 && dr["Fecha_Diagnostico"] != DBNull.Value)
+                ((DateTimePicker)controles[0]).Value = Convert.ToDateTime(dr["Fecha_Diagnostico"]);
+
+            // HORA DE INICIO
+            controles = tablaDiagnostico.Controls.Find("dtpHoraInicio", true);
+            if (controles.Length > 0 && dr["Hora_Inicio"] != DBNull.Value)
+                ((DateTimePicker)controles[0]).Value = DateTime.Today.Add(TimeSpan.Parse(dr["Hora_Inicio"].ToString()));
+
+            // HORA DE TÉRMINO
+            controles = tablaDiagnostico.Controls.Find("dtpHoraTermino", true);
+            if (controles.Length > 0 && dr["Hora_Termino"] != DBNull.Value)
+                ((DateTimePicker)controles[0]).Value = DateTime.Today.Add(TimeSpan.Parse(dr["Hora_Termino"].ToString()));
 
             // Tratamiento
             if (dr["Tratamiento"] != DBNull.Value)
@@ -2130,29 +2144,27 @@ WHERE h.Id = @Id";
 
                 Control ctrl = encontrados[0];
 
-                // === 🔹 TextBox ===
                 if (ctrl is TextBox txt)
-                {
                     txt.ReadOnly = !habilitar;
-                }
-                // === 🔹 DateTimePicker ===
+
                 else if (ctrl is DateTimePicker dtp)
-                {
                     dtp.Enabled = habilitar;
-                }
-                // === 🔹 Label (solo mostrar u ocultar) ===
+
                 else if (ctrl is Label lbl && nombre == "lblNombreArchivo")
                 {
                     lbl.Enabled = habilitar;
                     lbl.ForeColor = habilitar ? Color.Black : Color.Gray;
                 }
-                // === 🔹 Botón para cargar PDF ===
+
                 else if (ctrl is Button btn && nombre == "btnSubirPDF")
                 {
                     btn.Enabled = habilitar;
-                    btn.Visible = true; // opcional: mostrar siempre
+                    btn.Visible = true;
                 }
             }
+
+            // ⭐ BLOQUEAR O HABILITAR EL BOTÓN REGISTRAR
+            btnRegistrar.Enabled = habilitar;
         }
 
         private void HabilitarControlesOftalmologo(bool habilitar)
@@ -2174,6 +2186,8 @@ WHERE h.Id = @Id";
                 else if (encontrados[0] is FlowLayoutPanel panel)
                     panel.Enabled = habilitar;
             }
+
+            btnRegistrar.Enabled = habilitar;
         }
 
         private void HabilitarControlesRetinologo(bool habilitar)
@@ -2217,6 +2231,7 @@ WHERE h.Id = @Id";
                     }
                 }
             }
+            btnRegistrar.Enabled = habilitar;
         }
         private void VerificarPartesCompletadas()
         {
@@ -2249,6 +2264,7 @@ WHERE Id = @Id";
                     if (!dr.IsDBNull(2) && !string.IsNullOrWhiteSpace(dr["Nombre_retinologo"].ToString()))
                         HabilitarControlesRetinologo(false);
                 }
+
             }
         }
 

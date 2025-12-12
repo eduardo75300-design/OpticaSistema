@@ -542,7 +542,7 @@ namespace OpticaSistema
 
         private Control CrearPanelDibujoOjo(string titulo)
         {
-            // --- Panel contenedor ---
+            // --- Panel principal ---
             FlowLayoutPanel panelOjo = new FlowLayoutPanel();
             panelOjo.FlowDirection = FlowDirection.TopDown;
             panelOjo.Width = 390;
@@ -555,10 +555,11 @@ namespace OpticaSistema
             lblOjo.Text = titulo;
             lblOjo.Font = new Font("Segoe UI", 11, FontStyle.Bold);
             lblOjo.TextAlign = ContentAlignment.MiddleCenter;
+            lblOjo.Dock = DockStyle.Top;
             lblOjo.Width = 390;
             panelOjo.Controls.Add(lblOjo);
 
-            // --- PictureBox ---
+            // --- Imagen base ---
             PictureBox picOjo = new PictureBox();
             picOjo.Width = 360;
             picOjo.Height = 240;
@@ -566,7 +567,6 @@ namespace OpticaSistema
             picOjo.BackColor = Color.White;
             picOjo.SizeMode = PictureBoxSizeMode.StretchImage;
 
-            // --- Cargar imagen base desde archivo ---
             string ruta = Path.Combine(Application.StartupPath, "Imagenes",
                 titulo.Contains("Derecho") ? "derecho.png" : "izquierdo.png");
 
@@ -585,18 +585,11 @@ namespace OpticaSistema
                 }
             }
 
+            // --- Capa de dibujo ---
             Bitmap capaDibujo = new Bitmap(picOjo.Width, picOjo.Height);
-
-            // Guardar estructura interna
-            picOjo.Tag = new ImagenOjoData
-            {
-                ImagenBase = imagenBase,
-                CapaDibujo = capaDibujo
-            };
-
             picOjo.Image = Combinar(imagenBase, capaDibujo);
 
-            // --- Dibujo ---
+            // --- Variables de dibujo ---
             bool dibujando = false;
             Point puntoPrevio = Point.Empty;
 
@@ -611,18 +604,17 @@ namespace OpticaSistema
 
             picOjo.MouseMove += (s, e) =>
             {
-                if (!dibujando) return;
-
-                var datos = (ImagenOjoData)picOjo.Tag;
-
-                using (Graphics g = Graphics.FromImage(datos.CapaDibujo))
+                if (dibujando)
                 {
-                    Pen lapiz = new Pen(Color.Red, 2);
-                    g.DrawLine(lapiz, puntoPrevio, e.Location);
-                }
+                    using (Graphics g = Graphics.FromImage(capaDibujo))
+                    {
+                        Pen lapiz = new Pen(Color.Red, 2);
+                        g.DrawLine(lapiz, puntoPrevio, e.Location);
+                    }
 
-                picOjo.Image = Combinar(datos.ImagenBase, datos.CapaDibujo);
-                puntoPrevio = e.Location;
+                    picOjo.Image = Combinar(imagenBase, capaDibujo);
+                    puntoPrevio = e.Location;
+                }
             };
 
             picOjo.MouseUp += (s, e) => dibujando = false;
@@ -640,45 +632,25 @@ namespace OpticaSistema
 
             btnLimpiar.Click += (s, e) =>
             {
-                var datos = (ImagenOjoData)picOjo.Tag;
-
-                // --- 1. Recrear la capa de dibujo en blanco (limpiar el dibujo) ---
-                datos.CapaDibujo = new Bitmap(picOjo.Width, picOjo.Height);
-
-                // --- 2. Volver a cargar la imagen base ORIGINAL desde archivo ---
-                string ruta = Path.Combine(Application.StartupPath, "Imagenes",
-                    titulo.Contains("Derecho") ? "derecho.png" : "izquierdo.png");
-
-                if (File.Exists(ruta))
-                {
-                    datos.ImagenBase = new Bitmap(Image.FromFile(ruta), picOjo.Size);
-                }
-                else
-                {
-                    // Si la imagen no existe, se crea una en blanco
-                    datos.ImagenBase = new Bitmap(picOjo.Width, picOjo.Height);
-                    using (Graphics g = Graphics.FromImage(datos.ImagenBase))
-                        g.Clear(Color.White);
-                }
-
-                // --- 3. Guardar cambios en Tag ---
-                picOjo.Tag = datos;
-
-                // --- 4. Dibujar imagen original + dibujo vacío ---
-                picOjo.Image = Combinar(datos.ImagenBase, datos.CapaDibujo);
+                capaDibujo = new Bitmap(picOjo.Width, picOjo.Height);
+                picOjo.Image = Combinar(imagenBase, capaDibujo);
             };
 
             // --- Panel botones ---
             FlowLayoutPanel panelBotones = new FlowLayoutPanel();
             panelBotones.FlowDirection = FlowDirection.LeftToRight;
             panelBotones.AutoSize = true;
+            panelBotones.Margin = new Padding(0, 8, 0, 0);
             panelBotones.Controls.Add(btnLimpiar);
 
             panelOjo.Controls.Add(picOjo);
             panelOjo.Controls.Add(panelBotones);
 
             return panelOjo;
+
+
         }
+
 
 
         private Bitmap Combinar(Bitmap baseImg, Bitmap capa)
@@ -722,7 +694,8 @@ namespace OpticaSistema
         }
 
         private Control CrearPanelDiagnostico()
-        {// FlowLayoutPanel principal
+        {
+            // FlowLayoutPanel principal
             FlowLayoutPanel panelReceta = new FlowLayoutPanel();
             panelReceta.FlowDirection = FlowDirection.TopDown;
             panelReceta.AutoSize = true;
@@ -752,9 +725,9 @@ namespace OpticaSistema
 
             CheckBox chkMostrar = new CheckBox();
             chkMostrar.Text = "Mostrar Diagnóstico";
-            chkMostrar.Name = "cmbMostrarDiagnóstico";
-            chkMostrar.Checked = false; // Inicia oculto
-            chkMostrar.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+            chkMostrar.Name = "cmbMostrarDiagnostico";
+            chkMostrar.Checked = true; // 🔹 Activado por defecto
+            chkMostrar.Font = new Font("Segoe UI", 10);
             chkMostrar.AutoSize = true;
             chkMostrar.Margin = new Padding(10, 13, 0, 0);
 
@@ -767,10 +740,6 @@ namespace OpticaSistema
             TableLayoutPanel contenedor = new TableLayoutPanel();
             contenedor.AutoSize = true;
             contenedor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            contenedor.ColumnCount = 2;
-            contenedor.RowCount = 1;
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
 
             // --- Tabla Diagnóstico ---
             tablaDiagnostico = new TableLayoutPanel();
@@ -778,7 +747,6 @@ namespace OpticaSistema
             tablaDiagnostico.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
             tablaDiagnostico.BackColor = Color.WhiteSmoke;
             tablaDiagnostico.Width = 480;
-            tablaDiagnostico.Height = 220;
             tablaDiagnostico.AutoSize = true;
             tablaDiagnostico.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
@@ -808,6 +776,7 @@ namespace OpticaSistema
             for (int r = 0; r < campos.Length; r++)
             {
                 int fila = r + 1;
+
                 Label lblCampo = new Label();
                 lblCampo.Text = campos[r];
                 lblCampo.Dock = DockStyle.Fill;
@@ -845,22 +814,18 @@ namespace OpticaSistema
                 }
                 else
                 {
-                    // TextBox OD
                     TextBox txtOD = new TextBox();
                     txtOD.Dock = DockStyle.Fill;
                     txtOD.Name = $"txt{campoBase}_OD";
                     txtOD.TextAlign = HorizontalAlignment.Center;
                     txtOD.Font = new Font("Segoe UI", 11);
-                    txtOD.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOD, 1, fila);
 
-                    // TextBox OI
                     TextBox txtOI = new TextBox();
                     txtOI.Dock = DockStyle.Fill;
                     txtOI.Name = $"txt{campoBase}_OI";
                     txtOI.TextAlign = HorizontalAlignment.Center;
                     txtOI.Font = new Font("Segoe UI", 11);
-                    txtOI.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOI, 2, fila);
                 }
             }
@@ -873,19 +838,26 @@ namespace OpticaSistema
             txtObservaciones.Font = new Font("Segoe UI", 11);
             txtObservaciones.Height = 220;
             txtObservaciones.Name = "txtObservacionesDiagnostico";
-            txtObservaciones.Margin = new Padding(0, 0, 0, 0);
-            txtObservaciones.ReadOnly = true; // inicial deshabilitado
 
-            // Estado inicial: solo textarea
-            contenedor.ColumnCount = 1;
+            // 🔹 ESTADO INICIAL: TABLA + TEXTAREA VISIBLE
+            contenedor.ColumnCount = 2;
+            contenedor.RowCount = 1;
             contenedor.ColumnStyles.Clear();
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            contenedor.Controls.Add(txtObservaciones, 0, 0);
-            txtObservaciones.Width = 780;
+            contenedor.RowStyles.Clear();
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 480F));
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
+            contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            contenedor.Controls.Add(tablaDiagnostico, 0, 0);
+            contenedor.Controls.Add(txtObservaciones, 1, 0);
+
+            tablaDiagnostico.Dock = DockStyle.Fill;
+            txtObservaciones.Dock = DockStyle.Fill;
+            txtObservaciones.Margin = new Padding(10, 0, 0, 0);
 
             panelReceta.Controls.Add(contenedor);
 
-            // Evento CheckBox
+            // Evento: ocultar/mostrar
             chkMostrar.CheckedChanged += (s, e) =>
             {
                 contenedor.SuspendLayout();
@@ -894,31 +866,22 @@ namespace OpticaSistema
                 if (chkMostrar.Checked)
                 {
                     contenedor.ColumnCount = 2;
-                    contenedor.RowCount = 1;
                     contenedor.ColumnStyles.Clear();
-                    contenedor.RowStyles.Clear();
                     contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 480F));
                     contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
-                    contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(tablaDiagnostico, 0, 0);
                     contenedor.Controls.Add(txtObservaciones, 1, 0);
 
-                    tablaDiagnostico.Dock = DockStyle.Fill;
-                    txtObservaciones.Dock = DockStyle.Fill;
                     txtObservaciones.Margin = new Padding(10, 0, 0, 0);
                 }
                 else
                 {
                     contenedor.ColumnCount = 1;
-                    contenedor.RowCount = 1;
                     contenedor.ColumnStyles.Clear();
-                    contenedor.RowStyles.Clear();
                     contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-                    contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(txtObservaciones, 0, 0);
-                    txtObservaciones.Dock = DockStyle.Fill;
                     txtObservaciones.Margin = new Padding(0);
                 }
 
@@ -1512,11 +1475,37 @@ WHERE Id = @Id";
                     txt.Text = dr["ExamenOftamologico"].ToString();
             }
 
+            // === Imagen Ojo Derecho ===
             if (dr["OjoDerecho"] != DBNull.Value)
-                CargarImagenOjoDesdeBD((byte[])dr["OjoDerecho"], "panelOjoDerecho");
+            {
+                Control[] panelOD = this.Controls.Find("panelOjoDerecho", true);
+                if (panelOD.Length > 0 && panelOD[0] is FlowLayoutPanel panel)
+                {
+                    PictureBox pic = panel.Controls.OfType<PictureBox>().FirstOrDefault();
+                    if (pic != null)
+                    {
+                        byte[] data = (byte[])dr["OjoDerecho"];
+                        using (MemoryStream ms = new MemoryStream(data))
+                            pic.Image = Image.FromStream(ms);
+                    }
+                }
+            }
 
+            // === Imagen Ojo Izquierdo ===
             if (dr["OjoIzquierdo"] != DBNull.Value)
-                CargarImagenOjoDesdeBD((byte[])dr["OjoIzquierdo"], "panelOjoIzquierdo");
+            {
+                Control[] panelOI = this.Controls.Find("panelOjoIzquierdo", true);
+                if (panelOI.Length > 0 && panelOI[0] is FlowLayoutPanel panel)
+                {
+                    PictureBox pic = panel.Controls.OfType<PictureBox>().FirstOrDefault();
+                    if (pic != null)
+                    {
+                        byte[] data = (byte[])dr["OjoIzquierdo"];
+                        using (MemoryStream ms = new MemoryStream(data))
+                            pic.Image = Image.FromStream(ms);
+                    }
+                }
+            }
 
             // ✔ Cargar NombreArchivo
             if (dr["NombreArchivo"] != DBNull.Value)
@@ -2049,14 +2038,43 @@ WHERE Id = @Id";
                             cmd.Parameters.AddWithValue("@ExamenOftamologico",
                                 this.Controls.Find("txtExamenOftalmologico", true).FirstOrDefault()?.Text ?? "");
 
-                            var panelDerecho = this.Controls.Find("panelOjoDerecho", true).FirstOrDefault() as Panel;
-                            var panelIzquierdo = this.Controls.Find("panelOjoIzquierdo", true).FirstOrDefault() as Panel;
+                            // === GUARDAR OJO DERECHO ===
+                            Control[] panelOD = this.Controls.Find("panelOjoDerecho", true);
+                            if (panelOD.Length > 0 && panelOD[0] is FlowLayoutPanel pod)
+                            {
+                                PictureBox pic = pod.Controls.OfType<PictureBox>().FirstOrDefault();
+                                if (pic != null && pic.Image != null)
+                                {
+                                    using (MemoryStream ms = new MemoryStream())
+                                    {
+                                        pic.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                                        cmd.Parameters.AddWithValue("@OjoDerecho", ms.ToArray());
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                cmd.Parameters.AddWithValue("@OjoDerecho", DBNull.Value);
+                            }
 
-                            byte[] ojoD = PanelToByteArray(panelDerecho);
-                            byte[] ojoI = PanelToByteArray(panelIzquierdo);
-
-                            cmd.Parameters.AddWithValue("@OjoDerecho", (object)ojoD ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@OjoIzquierdo", (object)ojoI ?? DBNull.Value);
+                            // === GUARDAR OJO IZQUIERDO ===
+                            Control[] panelOI = this.Controls.Find("panelOjoIzquierdo", true);
+                            if (panelOI.Length > 0 && panelOI[0] is FlowLayoutPanel poi)
+                            {
+                                PictureBox pic = poi.Controls.OfType<PictureBox>().FirstOrDefault();
+                                if (pic != null && pic.Image != null)
+                                {
+                                    using (MemoryStream ms = new MemoryStream())
+                                    {
+                                        pic.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                                        cmd.Parameters.AddWithValue("@OjoIzquierdo", ms.ToArray());
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                cmd.Parameters.AddWithValue("@OjoIzquierdo", DBNull.Value);
+                            }
 
                             // -------------------------------
                             // CONSULTA RETINÓLOGO
@@ -2278,28 +2296,7 @@ WHERE Id = @Id";
             }
         }
 
-        private void CargarImagenOjoDesdeBD(byte[] data, string panelName)
-        {
-            Control[] panel = this.Controls.Find(panelName, true);
-            if (panel.Length == 0) return;
-
-            PictureBox pic = panel[0].Controls.OfType<PictureBox>().FirstOrDefault();
-            if (pic == null) return;
-
-            var datos = (ImagenOjoData)pic.Tag;
-
-            using (MemoryStream ms = new MemoryStream(data))
-            {
-                Bitmap imgBD = new Bitmap(Image.FromStream(ms), pic.Size);
-
-                // MUY IMPORTANTE: la imagen BD sustituye a la imagen base
-                datos.ImagenBase = imgBD;
-            }
-
-            pic.Image = Combinar(datos.ImagenBase, datos.CapaDibujo);
-        }
-
-
+        
         //Generar imagen con texto y despues PDF
         private byte[] GenerarImagenConDatos(
             dynamic datos,
