@@ -2178,45 +2178,43 @@ WHERE h.Id = @Id";
 
         private void HabilitarControlesRetinologo(bool habilitar)
         {
-            string[] controles = {
-    "txtObservacionesDiagnostico",
-    "txtAVSC_OD", "txtAVSC_OI",
-    "txtAVCC_OD", "txtAVCC_OI",
-    "txtPIOICARE_OD", "txtPIOICARE_OI",
-    "dtpFechaDiagnostico", "dtpHoraInicio", "dtpHoraTermino",
-    "txtTratamiento1",
-    "lblNombreArchivo",      // 🔹 Agregamos el label
-    "btnSubirPDF"       // 🔹 Agregamos el botón
-};
+            /// Controles fuera de la tabla
+            string[] controlesExternos = {
+        "txtObservacionesDiagnostico",
+        "txtTratamiento1",
+        "lblNombreArchivo",
+        "btnSubirPDF"
+    };
 
-            foreach (string nombre in controles)
+            foreach (string nombre in controlesExternos)
             {
                 Control[] encontrados = this.Controls.Find(nombre, true);
                 if (encontrados.Length == 0) continue;
 
                 Control ctrl = encontrados[0];
 
-                // === 🔹 TextBox ===
-                if (ctrl is TextBox txt)
-                {
-                    txt.ReadOnly = !habilitar;
-                }
-                // === 🔹 DateTimePicker ===
-                else if (ctrl is DateTimePicker dtp)
-                {
-                    dtp.Enabled = habilitar;
-                }
-                // === 🔹 Label (solo mostrar u ocultar) ===
+                if (ctrl is TextBox txt) txt.ReadOnly = !habilitar;
                 else if (ctrl is Label lbl && nombre == "lblNombreArchivo")
                 {
                     lbl.Enabled = habilitar;
                     lbl.ForeColor = habilitar ? Color.Black : Color.Gray;
                 }
-                // === 🔹 Botón para cargar PDF ===
-                else if (ctrl is Button btn && nombre == "btnSubirPDF")
+                else if (ctrl is Button btn && nombre == "btnSubirPDF") btn.Enabled = habilitar;
+            }
+
+            // Controles dentro de la tabla
+            if (tablaDiagnostico != null)
+            {
+                foreach (Control c in tablaDiagnostico.Controls)
                 {
-                    btn.Enabled = habilitar;
-                    btn.Visible = true; // opcional: mostrar siempre
+                    if (c is TextBox txt)
+                    {
+                        txt.ReadOnly = !habilitar; // habilita/deshabilita TextBox
+                    }
+                    else if (c is DateTimePicker dtp)
+                    {
+                        dtp.Enabled = habilitar; // habilita/deshabilita DateTimePicker
+                    }
                 }
             }
         }
