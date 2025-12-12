@@ -232,7 +232,7 @@ namespace OpticaSistema
 
             foreach (string campo in camposPaciente)
             {
-                panelDatosBasicos.Controls.Add(CrearCampoLayout(campo, true));
+                panelDatosBasicos.Controls.Add(CrearCampoLayout1(campo, true));
             }
 
             // --- NUEVOS CAMPOS DEL HISTORIAL ---
@@ -245,7 +245,7 @@ namespace OpticaSistema
             panelFechaMotivo.Margin = new Padding(0);
 
             // 1. Fecha de Consulta
-            TableLayoutPanel fechaLayout = CrearCampoLayout("FechaConsulta", false);
+            TableLayoutPanel fechaLayout = CrearCampoLayout("FechaConsulta", 250, 80, false);
             Control lblFecha = fechaLayout.Controls[0];
             lblFecha.Text = "Fecha Consulta:";
 
@@ -259,7 +259,7 @@ namespace OpticaSistema
             fechaLayout.Controls.Add(dtpFechaConsulta, 0, 1);
 
             // 2. Motivo de Consulta
-            TableLayoutPanel motivoLayout = CrearCampoLayout("MotivoConsulta", false);
+            TableLayoutPanel motivoLayout = CrearCampoLayout("MotivoConsulta", 400, 80, false);
             Control lblMotivo = motivoLayout.Controls[0];
             lblMotivo.Text = "Motivo de Consulta:";
 
@@ -292,7 +292,7 @@ namespace OpticaSistema
             panelHorizontal.Controls.Add(CrearPanelCorrectores());
 
             // === OBSERVACIONES ===
-            TableLayoutPanel observacionesLayout = CrearCampoLayout("Observaciones", false);
+            TableLayoutPanel observacionesLayout = CrearCampoLayout("Observaciones", 820, 120, false);
             Control lblObservaciones = observacionesLayout.Controls[0];
             lblObservaciones.Text = "OBSERVACIONES:";
 
@@ -308,7 +308,7 @@ namespace OpticaSistema
 
 
             // === SIGNOS Y SÍNTOMAS ===
-            TableLayoutPanel signosLayout = CrearCampoLayout("SignosSintomas", false);
+            TableLayoutPanel signosLayout = CrearCampoLayout("SignosSintomas", 820, 120, false);
             Control lblSignos = signosLayout.Controls[0];
             lblSignos.Text = "SIGNOS Y SÍNTOMAS:";
 
@@ -375,7 +375,7 @@ namespace OpticaSistema
             panelOjos.Controls.Add(CrearPanelDibujoOjo("Ojo Izquierdo"));
 
             // === TRATAMIENTO ===
-            TableLayoutPanel tratamientoLayout = CrearCampoLayout("Tratamiento", false);
+            TableLayoutPanel tratamientoLayout = CrearCampoLayout("Tratamiento", 820, 120, false);
             Control lblTratamiento = tratamientoLayout.Controls[0];
             lblTratamiento.Text = "TRATAMIENTO:";
 
@@ -692,33 +692,28 @@ namespace OpticaSistema
             return resultado;
         }
 
-        private TableLayoutPanel CrearCampoLayout(string nombreCampo, bool esReadOnly)
+        private TableLayoutPanel CrearCampoLayout(string nombreCampo, int ancho, int alto, bool esReadOnly)
         {
             TableLayoutPanel campoLayout = new TableLayoutPanel();
+            campoLayout.Width = ancho;
+            campoLayout.Height = alto;
             campoLayout.ColumnCount = 1;
             campoLayout.RowCount = 2;
-
-            campoLayout.Dock = DockStyle.Top; // Se acomoda automáticamente
-            campoLayout.AutoSize = true;
-            campoLayout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            campoLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
+            campoLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
             campoLayout.Margin = new Padding(10);
-
-            campoLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            campoLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             Label lbl = new Label();
             lbl.Text = (nombreCampo == "Dni" ? "DNI" : nombreCampo) + ":";
-            lbl.Dock = DockStyle.Top;
+            lbl.Dock = DockStyle.Fill;
             lbl.TextAlign = ContentAlignment.MiddleLeft;
             lbl.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-            lbl.AutoSize = true;
 
             TextBox txt = new TextBox();
             txt.Name = "txt" + nombreCampo;
-            txt.Dock = DockStyle.Top;
+            txt.Dock = DockStyle.Fill;
             txt.Font = new Font("Segoe UI", 12);
             txt.ReadOnly = esReadOnly;
-            txt.Width = campoLayout.Width;
 
             campoLayout.Controls.Add(lbl, 0, 0);
             campoLayout.Controls.Add(txt, 0, 1);
@@ -2556,7 +2551,39 @@ WHERE Id = @Id";
             return null;
         }
 
+        private TableLayoutPanel CrearCampoLayout1(string nombreCampo, bool esReadOnly)
+        {
+            TableLayoutPanel campoLayout = new TableLayoutPanel();
+            campoLayout.ColumnCount = 1;
+            campoLayout.RowCount = 2;
 
+            campoLayout.Dock = DockStyle.Top; // Se acomoda automáticamente
+            campoLayout.AutoSize = true;
+            campoLayout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            campoLayout.Margin = new Padding(10);
+
+            campoLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            campoLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            Label lbl = new Label();
+            lbl.Text = (nombreCampo == "Dni" ? "DNI" : nombreCampo) + ":";
+            lbl.Dock = DockStyle.Top;
+            lbl.TextAlign = ContentAlignment.MiddleLeft;
+            lbl.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            lbl.AutoSize = true;
+
+            TextBox txt = new TextBox();
+            txt.Name = "txt" + nombreCampo;
+            txt.Dock = DockStyle.Top;
+            txt.Font = new Font("Segoe UI", 12);
+            txt.ReadOnly = esReadOnly;
+            txt.Width = campoLayout.Width;
+
+            campoLayout.Controls.Add(lbl, 0, 0);
+            campoLayout.Controls.Add(txt, 0, 1);
+
+            return campoLayout;
+        }
 
     }
 

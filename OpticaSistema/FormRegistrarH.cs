@@ -170,9 +170,10 @@ namespace OpticaSistema
             // --- SECCIÓN 1: DATOS BÁSICOS Y FECHA (Organizado en un sub-panel horizontal) ---
             FlowLayoutPanel panelDatosBasicos = new FlowLayoutPanel();
             panelDatosBasicos.FlowDirection = FlowDirection.LeftToRight;
-            panelDatosBasicos.AutoSize = true;
             panelDatosBasicos.WrapContents = true;
-            panelDatosBasicos.Margin = new Padding(0);
+            panelDatosBasicos.AutoScroll = true;
+            panelDatosBasicos.Dock = DockStyle.Fill;
+
 
             // Campos de la BD (Paciente)
             string[] camposPaciente = new string[]
@@ -182,8 +183,7 @@ namespace OpticaSistema
 
             foreach (string campo in camposPaciente)
             {
-                TableLayoutPanel campoLayout = CrearCampoLayout(campo, 250, 80, true);
-                panelDatosBasicos.Controls.Add(campoLayout);
+                panelDatosBasicos.Controls.Add(CrearCampoLayout1(campo, true));
             }
 
             // --- NUEVOS CAMPOS DEL HISTORIAL ---
@@ -2506,7 +2506,40 @@ WHERE Id = @Id";
             }
             return null;
         }
-    
+
+        private TableLayoutPanel CrearCampoLayout1(string nombreCampo, bool esReadOnly)
+        {
+            TableLayoutPanel campoLayout = new TableLayoutPanel();
+            campoLayout.ColumnCount = 1;
+            campoLayout.RowCount = 2;
+
+            campoLayout.Dock = DockStyle.Top; // Se acomoda automáticamente
+            campoLayout.AutoSize = true;
+            campoLayout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            campoLayout.Margin = new Padding(10);
+
+            campoLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            campoLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            Label lbl = new Label();
+            lbl.Text = (nombreCampo == "Dni" ? "DNI" : nombreCampo) + ":";
+            lbl.Dock = DockStyle.Top;
+            lbl.TextAlign = ContentAlignment.MiddleLeft;
+            lbl.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            lbl.AutoSize = true;
+
+            TextBox txt = new TextBox();
+            txt.Name = "txt" + nombreCampo;
+            txt.Dock = DockStyle.Top;
+            txt.Font = new Font("Segoe UI", 12);
+            txt.ReadOnly = esReadOnly;
+            txt.Width = campoLayout.Width;
+
+            campoLayout.Controls.Add(lbl, 0, 0);
+            campoLayout.Controls.Add(txt, 0, 1);
+
+            return campoLayout;
+        }
     }
 }
 
