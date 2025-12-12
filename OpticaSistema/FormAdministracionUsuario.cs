@@ -504,13 +504,54 @@ namespace OpticaSistema
                             // Solo si ingresa nueva clave
                             if (cambiarClave)
                             {
-                                cmd.Parameters.AddWithValue("@clave", txtClave.Text.Trim());
+                                string claveHash = PasswordHelper.HashPassword(txtClave.Text.Trim());
+                                cmd.Parameters.AddWithValue("@clave", claveHash);
                             }
 
                             cmd.ExecuteNonQuery();
 
                             MessageBox.Show("Usuario actualizado correctamente.");
 
+                        }
+                        else
+                        {
+                            string verificarQuery = "SELECT COUNT(*) FROM UsuarioBD WHERE Dni = @dni";
+                            SqlCommand verificarCmd = new SqlCommand(verificarQuery, cn);
+                            verificarCmd.Parameters.AddWithValue("@dni", txtDni.Text.Trim());
+
+                            int existe = (int)verificarCmd.ExecuteScalar();
+
+                            if (existe > 0)
+                            {
+                                MessageBox.Show("Ya existe un usuario con ese DNI.");
+                                return;
+                            }
+
+                            string claveHash = PasswordHelper.HashPassword(txtClave.Text.Trim());
+
+                            string insertQuery = @"INSERT INTO UsuarioBD
+        (Nombres, Apellidos, Contraseña, Correo, Direccion, Celular, Sexo,
+         TipoUsuario, Estado, Dni)
+        VALUES
+        (@nombres, @apellidos, @clave, @correo, @direccion, @celular, @sexo,
+         @tipo, @estado, @dni)";
+
+                            SqlCommand cmd = new SqlCommand(insertQuery, cn);
+
+                            cmd.Parameters.AddWithValue("@nombres", txtNombre.Text.Trim());
+                            cmd.Parameters.AddWithValue("@apellidos", txtApellido.Text.Trim());
+                            cmd.Parameters.AddWithValue("@clave", claveHash);
+                            cmd.Parameters.AddWithValue("@correo", txtCorreo.Text.Trim());
+                            cmd.Parameters.AddWithValue("@direccion", txtDireccion.Text.Trim());
+                            cmd.Parameters.AddWithValue("@celular", txtCelular.Text.Trim());
+                            cmd.Parameters.AddWithValue("@sexo", sexoOpciones[sexoSeleccionado]);
+                            cmd.Parameters.AddWithValue("@tipo", tipoUsuarioOpciones[tipoSeleccionado]);
+                            cmd.Parameters.AddWithValue("@estado", true);
+                            cmd.Parameters.AddWithValue("@dni", txtDni.Text.Trim());
+
+                            cmd.ExecuteNonQuery();
+
+                            MessageBox.Show("Usuario registrado correctamente.");
                         }
 
                         // Limpiar campos y cerrar panel
