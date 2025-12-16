@@ -1424,7 +1424,8 @@ WHERE Id = @Id";
         }
         // Método para crear la tabla de Correctores (la parte más compleja)
         private Control CrearPanelDiagnostico()
-        {// FlowLayoutPanel principal
+        {
+            // FlowLayoutPanel principal
             FlowLayoutPanel panelReceta = new FlowLayoutPanel();
             panelReceta.FlowDirection = FlowDirection.TopDown;
             panelReceta.AutoSize = true;
@@ -1454,9 +1455,9 @@ WHERE Id = @Id";
 
             CheckBox chkMostrar = new CheckBox();
             chkMostrar.Text = "Mostrar Diagnóstico";
-            chkMostrar.Name = "cmbMostrarDiagnóstico";
-            chkMostrar.Checked = false; // Inicia oculto
-            chkMostrar.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+            chkMostrar.Name = "cmbMostrarDiagnostico";
+            chkMostrar.Checked = true; // 🔹 Activado por defecto
+            chkMostrar.Font = new Font("Segoe UI", 10);
             chkMostrar.AutoSize = true;
             chkMostrar.Margin = new Padding(10, 13, 0, 0);
 
@@ -1469,10 +1470,6 @@ WHERE Id = @Id";
             TableLayoutPanel contenedor = new TableLayoutPanel();
             contenedor.AutoSize = true;
             contenedor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            contenedor.ColumnCount = 2;
-            contenedor.RowCount = 1;
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
 
             // --- Tabla Diagnóstico ---
             tablaDiagnostico = new TableLayoutPanel();
@@ -1480,7 +1477,6 @@ WHERE Id = @Id";
             tablaDiagnostico.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
             tablaDiagnostico.BackColor = Color.WhiteSmoke;
             tablaDiagnostico.Width = 480;
-            tablaDiagnostico.Height = 220;
             tablaDiagnostico.AutoSize = true;
             tablaDiagnostico.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
@@ -1510,6 +1506,7 @@ WHERE Id = @Id";
             for (int r = 0; r < campos.Length; r++)
             {
                 int fila = r + 1;
+
                 Label lblCampo = new Label();
                 lblCampo.Text = campos[r];
                 lblCampo.Dock = DockStyle.Fill;
@@ -1547,22 +1544,18 @@ WHERE Id = @Id";
                 }
                 else
                 {
-                    // TextBox OD
                     TextBox txtOD = new TextBox();
                     txtOD.Dock = DockStyle.Fill;
                     txtOD.Name = $"txt{campoBase}_OD";
                     txtOD.TextAlign = HorizontalAlignment.Center;
                     txtOD.Font = new Font("Segoe UI", 11);
-                    txtOD.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOD, 1, fila);
 
-                    // TextBox OI
                     TextBox txtOI = new TextBox();
                     txtOI.Dock = DockStyle.Fill;
                     txtOI.Name = $"txt{campoBase}_OI";
                     txtOI.TextAlign = HorizontalAlignment.Center;
                     txtOI.Font = new Font("Segoe UI", 11);
-                    txtOI.ReadOnly = true; // inicial deshabilitado
                     tablaDiagnostico.Controls.Add(txtOI, 2, fila);
                 }
             }
@@ -1575,19 +1568,26 @@ WHERE Id = @Id";
             txtObservaciones.Font = new Font("Segoe UI", 11);
             txtObservaciones.Height = 220;
             txtObservaciones.Name = "txtObservacionesDiagnostico";
-            txtObservaciones.Margin = new Padding(0, 0, 0, 0);
-            txtObservaciones.ReadOnly = true; // inicial deshabilitado
 
-            // Estado inicial: solo textarea
-            contenedor.ColumnCount = 1;
+            // 🔹 ESTADO INICIAL: TABLA + TEXTAREA VISIBLE
+            contenedor.ColumnCount = 2;
+            contenedor.RowCount = 1;
             contenedor.ColumnStyles.Clear();
-            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            contenedor.Controls.Add(txtObservaciones, 0, 0);
-            txtObservaciones.Width = 780;
+            contenedor.RowStyles.Clear();
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 480F));
+            contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
+            contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            contenedor.Controls.Add(tablaDiagnostico, 0, 0);
+            contenedor.Controls.Add(txtObservaciones, 1, 0);
+
+            tablaDiagnostico.Dock = DockStyle.Fill;
+            txtObservaciones.Dock = DockStyle.Fill;
+            txtObservaciones.Margin = new Padding(10, 0, 0, 0);
 
             panelReceta.Controls.Add(contenedor);
 
-            // Evento CheckBox
+            // Evento: ocultar/mostrar
             chkMostrar.CheckedChanged += (s, e) =>
             {
                 contenedor.SuspendLayout();
@@ -1596,31 +1596,22 @@ WHERE Id = @Id";
                 if (chkMostrar.Checked)
                 {
                     contenedor.ColumnCount = 2;
-                    contenedor.RowCount = 1;
                     contenedor.ColumnStyles.Clear();
-                    contenedor.RowStyles.Clear();
                     contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 480F));
                     contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 300F));
-                    contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(tablaDiagnostico, 0, 0);
                     contenedor.Controls.Add(txtObservaciones, 1, 0);
 
-                    tablaDiagnostico.Dock = DockStyle.Fill;
-                    txtObservaciones.Dock = DockStyle.Fill;
                     txtObservaciones.Margin = new Padding(10, 0, 0, 0);
                 }
                 else
                 {
                     contenedor.ColumnCount = 1;
-                    contenedor.RowCount = 1;
                     contenedor.ColumnStyles.Clear();
-                    contenedor.RowStyles.Clear();
                     contenedor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-                    contenedor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
                     contenedor.Controls.Add(txtObservaciones, 0, 0);
-                    txtObservaciones.Dock = DockStyle.Fill;
                     txtObservaciones.Margin = new Padding(0);
                 }
 
