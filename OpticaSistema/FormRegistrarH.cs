@@ -2075,17 +2075,18 @@ WHERE h.Id = @Id";
             // 🔹 MEDIDA DE LA VISTA
             if (motivoConsulta == "medida de la vista")
             {
-                HabilitarControlesMedidaVista(true);
+                
                 HabilitarControlesOftalmologo(false);
                 HabilitarControlesRetinologo(false);
+                HabilitarControlesMedidaVista(true);
             }
 
             // 🔹 CONSULTA OFTALMOLÓGICA
             else if (motivoConsulta == "consulta oftalmológica")
             {
                 HabilitarControlesMedidaVista(false);
-                HabilitarControlesOftalmologo(true);
                 HabilitarControlesRetinologo(false);
+                HabilitarControlesOftalmologo(true);
             }
 
             // 🔹 CONSULTA CON RETINÓLOGO
@@ -2101,15 +2102,16 @@ WHERE h.Id = @Id";
             {
                 if (tipoUsuario == "O") // 👓 Optometrista
                 {
-                    HabilitarControlesMedidaVista(true);
+                    
                     HabilitarControlesOftalmologo(false);
                     HabilitarControlesRetinologo(false);
+                    HabilitarControlesMedidaVista(true);
                 }
                 else if (tipoUsuario == "F") // 👁 Oftalmólogo
                 {
                     HabilitarControlesMedidaVista(false);
-                    HabilitarControlesOftalmologo(true);
                     HabilitarControlesRetinologo(false);
+                    HabilitarControlesOftalmologo(true);
                 }
                 else if (tipoUsuario == "R") // 🔬 Retinólogo
                 {
@@ -2161,10 +2163,11 @@ WHERE h.Id = @Id";
                     btn.Enabled = habilitar;
                     btn.Visible = true;
                 }
+
             }
 
-            // ⭐ BLOQUEAR O HABILITAR EL BOTÓN REGISTRAR
             btnRegistrar.Enabled = habilitar;
+
         }
 
         private void HabilitarControlesOftalmologo(bool habilitar)
@@ -2188,6 +2191,7 @@ WHERE h.Id = @Id";
             }
 
             btnRegistrar.Enabled = habilitar;
+
         }
 
         private void HabilitarControlesRetinologo(bool habilitar)
@@ -2231,6 +2235,7 @@ WHERE h.Id = @Id";
                     }
                 }
             }
+
             btnRegistrar.Enabled = habilitar;
         }
         private void VerificarPartesCompletadas()
